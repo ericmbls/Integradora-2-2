@@ -1,7 +1,5 @@
 export const authFetch = (url, options = {}) => {
-
   const token = localStorage.getItem("token");
-
   const headers = {
     ...(options.headers || {}),
     Authorization: `Bearer ${token}`,
@@ -15,5 +13,4 @@ export const authFetch = (url, options = {}) => {
     ...options,
     headers
   });
-
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getReportesByCultivo, createReporte } from "../../services/reportes.service";
-import AddReporteModal from "../../components/reportes/AddReporteModal";
+import AddReporteModal from "../../components/cultivo/AddReporteModal";
 import "./CultivoDetallePage.css";
 
 export default function CultivoDetallePage({ cultivo }) {
