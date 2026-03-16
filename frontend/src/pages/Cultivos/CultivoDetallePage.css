@@ -1,0 +1,81 @@
+.cultivo-detalle-container {
+  padding: 24px;
+}
+
+.cultivo-detalle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.estado {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.estado-activo {
+  background: #d4f5d3;
+}
+
+.estado-inactivo {
+  background: #f3f3f3;
+}
+
+.estado-cosechado {
+  background: #fff3cd;
+}
+
+.estado-perdido {
+  background: #f8d7da;
+}
+
+.cultivo-detalle-info {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.cultivo-detalle-img {
+  width: 320px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.cultivo-detalle-data p {
+  margin-bottom: 10px;
+}
+
+.bitacora-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-add-reporte {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2e7d32;
+  color: white;
+  cursor: pointer;
+}
+
+.bitacora-empty {
+  margin-top: 20px;
+  color: #777;
+}
+
+.reporte-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  margin-top: 12px;
+}
+
+.reporte-fecha {
+  font-size: 12px;
+  color: #777;
+}

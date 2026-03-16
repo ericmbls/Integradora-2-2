@@ -12,6 +12,8 @@ const config_1 = require("@nestjs/config");
 const auth_module_1 = require("./auth/auth.module");
 const usuarios_module_1 = require("./usuarios/usuarios.module");
 const cultivos_module_1 = require("./cultivos/cultivos.module");
+const dashboard_module_1 = require("./dashboard/dashboard.module");
+const reportes_module_1 = require("./reportes/reportes.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -22,6 +24,8 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             usuarios_module_1.UsuariosModule,
             cultivos_module_1.CultivosModule,
+            dashboard_module_1.DashboardModule,
+            reportes_module_1.ReportesModule,
         ],
     })
 ], AppModule);

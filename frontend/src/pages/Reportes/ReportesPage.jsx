@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   FileText, Calendar, Filter, Download, Share2,
   Droplets, DollarSign, TrendingUp
@@ -5,40 +7,53 @@ import {
 import './ReportesPage.css';
 
 export default function ReportesPage() {
+  const [kpis, setKpis] = useState([]);
+  const [chartData, setChartData] = useState([]);
+  const [reportes, setReportes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const kpis = [
-    { title: 'Producción total', value: '2,450 Kg', badge: '+18%', sub: 'Este mes', icon: <SproutIcon /> },
-    { title: 'Ahorro de Agua', value: '2,660 L', badge: '-22%', sub: 'Este mes', icon: <Droplets size={20} color="#0EA5E9" /> },
-    { title: 'Ingresos', value: '$18,450', badge: '+24%', sub: 'Este mes', icon: <DollarSign size={20} color="#16A34A" /> },
-    { title: 'Eficiencia', value: '94%', badge: '+12%', sub: 'Promedio general', icon: <TrendingUp size={20} color="#EA580C" /> },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [kpiRes, chartRes, repRes] = await Promise.all([
+          axios.get('http://localhost:3000/api/reportes/kpis'),
+          axios.get('http://localhost:3000/api/reportes/chart'),
+          axios.get('http://localhost:3000/api/reportes/list'),
+        ]);
+        setKpis(kpiRes.data);
+        setChartData(chartRes.data);
+        setReportes(repRes.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const chartData = [
-    { month: 'Agos', fresa: 60, lechuga: 70, pimiento: 72, tomate: 75 },
-    { month: 'Sep', fresa: 62, lechuga: 68, pimiento: 65, tomate: 70 },
-    { month: 'Oct', fresa: 0, lechuga: 0, pimiento: 0, tomate: 0 },
-    { month: 'Dic', fresa: 60, lechuga: 70, pimiento: 68, tomate: 74 },
-  ];
+  const generarReporte = async () => {
+    await axios.post('http://localhost:3000/api/reportes/generar');
+  };
 
-  const reportes = [
-    { id: 1, title: 'Reporte Semanal de Producción', date: '1 Feb 2026', type: 'Producción', size: '1.8 MB', status: 'ready' },
-    { id: 2, title: 'Análisis de Consumo de Agua - Enero', date: '1 Feb 2026', type: 'Recursos', size: '1.8 MB', status: 'ready' },
-    { id: 3, title: 'Estado de Salud de Cultivos', date: '31 Ene 2026', type: 'Agronómico', size: '3.2 MB', status: 'ready' },
-    { id: 4, title: 'Informe Financiero Q4 2025', date: '28 Ene 2026', type: 'Financiero', size: '4.5 MB', status: 'ready' },
-    { id: 5, title: 'Reporte de Inventario', date: '25 Ene 2026', type: 'Enero', size: 'Procesando', status: 'processing' },
-  ];
+  const descargarReporte = async (id) => {
+    const res = await axios.get(`http://localhost:3000/api/reportes/${id}/descargar`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `reporte-${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+  };
 
   return (
     <div className="dashboard-content">
-
       <div className="page-header-row">
         <div>
           <h1 className="page-title">Reportes y Análisis</h1>
-          <p className="page-subtitle">
-            Genera y consulta reportes del sistema
-          </p>
+          <p className="page-subtitle">Genera y consulta reportes del sistema</p>
         </div>
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={generarReporte}>
           <FileText size={18} style={{ marginRight: 8 }} />
           Generar Reporte
         </button>
@@ -48,12 +63,8 @@ export default function ReportesPage() {
         {kpis.map((kpi, index) => (
           <div key={index} className="kpi-card-report">
             <div className="kpi-top">
-              <div className="kpi-icon-wrapper">
-                {kpi.icon}
-              </div>
-              <span className="kpi-badge">
-                {kpi.badge}
-              </span>
+              <div className="kpi-icon-wrapper">{kpi.icon}</div>
+              <span className="kpi-badge">{kpi.badge}</span>
             </div>
             <div className="kpi-content">
               <span className="kpi-label">{kpi.title}</span>
@@ -84,9 +95,7 @@ export default function ReportesPage() {
           </div>
         </div>
 
-        <h3 className="chart-title">
-          Producción por Cultivo
-        </h3>
+        <h3 className="chart-title">Producción por Cultivo</h3>
 
         <div className="chart-legend">
           <LegendItem color="#F472B6" label="Fresa" />
@@ -108,9 +117,7 @@ export default function ReportesPage() {
               ) : (
                 <div className="bars-empty" />
               )}
-              <span className="chart-label">
-                {data.month}
-              </span>
+              <span className="chart-label">{data.month}</span>
             </div>
           ))}
         </div>
@@ -118,7 +125,6 @@ export default function ReportesPage() {
 
       <div className="reportes-list-section">
         <h3>Reportes Generados</h3>
-
         <div className="reportes-stack">
           {reportes.map((rep) => (
             <div key={rep.id} className="reporte-item">
@@ -131,18 +137,15 @@ export default function ReportesPage() {
                   <p>{rep.date} · {rep.type} · {rep.size}</p>
                 </div>
               </div>
-
               <div className="reporte-actions">
                 {rep.status === 'processing' ? (
-                  <button className="btn-processing">
-                    Procesando...
-                  </button>
+                  <button className="btn-processing">Procesando...</button>
                 ) : (
                   <>
                     <button className="btn-action-text">
                       <Share2 size={16} /> Compartir
                     </button>
-                    <button className="btn-action-text">
+                    <button className="btn-action-text" onClick={() => descargarReporte(rep.id)}>
                       <Download size={16} /> Descargar
                     </button>
                   </>
@@ -152,7 +155,6 @@ export default function ReportesPage() {
           ))}
         </div>
       </div>
-
     </div>
   );
 }
