@@ -1,0 +1,22 @@
+# Dependencias principales
+axios
+@nestjs/swagger
+swagger-ui-express
+class-validator
+class-transformer
+dotenv
+cors
+bcrypt
+
+# Prisma ORM v5
+@prisma/client@5
+prisma@5
+
+# desarrollo
+@types/node
+@types/bcrypt
+@types/express
+
+@nestjs/jwt
+@types/jsonwebtoken
+--save-dev vite
