@@ -2,52 +2,36 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import {
   FileText,
-  Calendar,
-  Filter,
   Download,
-  Share2
+  Share2,
+  Calendar,
+  MapPin,
+  User,
+  Tag
 } from "lucide-react";
 import "./ReportesPage.css";
 
 export default function ReportesPage() {
-  const [kpis, setKpis] = useState([]);
-  const [chartData, setChartData] = useState([]);
   const [reportes, setReportes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("todos");
 
   const API = "http://localhost:3000/api/reportes";
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchReportes = async () => {
       try {
-        const [kpiRes, chartRes, repRes] = await Promise.all([
-          axios.get(`${API}/kpis`),
-          axios.get(`${API}/chart`),
-          axios.get(`${API}/list`)
-        ]);
-
-        setKpis(kpiRes.data || []);
-        setChartData(chartRes.data || []);
+        const repRes = await axios.get(`${API}/list`);
         setReportes(repRes.data || []);
       } catch (err) {
-        console.error("Error cargando datos de reportes", err);
+        console.error("Error cargando reportes", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchReportes();
   }, []);
-
-  const generarReporte = async () => {
-    try {
-      await axios.post(`${API}/generar`);
-      alert("Reporte generado correctamente");
-    } catch (error) {
-      console.error(error);
-      alert("Error generando reporte");
-    }
-  };
 
   const descargarReporte = async (id) => {
     try {
@@ -68,127 +52,157 @@ export default function ReportesPage() {
     }
   };
 
+  const filteredReportes = filter === "todos" 
+    ? reportes 
+    : reportes.filter(rep => rep.type?.toLowerCase() === filter);
+
   if (loading) {
-    return <div className="loading-page">Cargando reportes...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Cargando reportes...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="dashboard-content">
-      <div className="page-header-row">
+    <div className="reportes-container">
+      <div className="reportes-header">
         <div>
-          <h1 className="page-title">Reportes y Análisis</h1>
-          <p className="page-subtitle">Genera y consulta reportes del sistema</p>
+          <h1 className="reportes-title">Reportes del Sistema</h1>
+          <p className="reportes-subtitle">Consulta y descarga reportes generados</p>
         </div>
+      </div>
 
-        <button className="btn-primary" onClick={generarReporte}>
-          <FileText size={18} style={{ marginRight: 8 }} />
-          Generar Reporte
+      <div className="reportes-filters">
+        <button 
+          className={`filter-chip ${filter === "todos" ? "active" : ""}`}
+          onClick={() => setFilter("todos")}
+        >
+          Todos
+        </button>
+        <button 
+          className={`filter-chip ${filter === "riego" ? "active" : ""}`}
+          onClick={() => setFilter("riego")}
+        >
+          Riego
+        </button>
+        <button 
+          className={`filter-chip ${filter === "fertilizacion" ? "active" : ""}`}
+          onClick={() => setFilter("fertilizacion")}
+        >
+          Fertilización
+        </button>
+        <button 
+          className={`filter-chip ${filter === "plaga" ? "active" : ""}`}
+          onClick={() => setFilter("plaga")}
+        >
+          Plaga
+        </button>
+        <button 
+          className={`filter-chip ${filter === "cosecha" ? "active" : ""}`}
+          onClick={() => setFilter("cosecha")}
+        >
+          Cosecha
+        </button>
+        <button 
+          className={`filter-chip ${filter === "observacion" ? "active" : ""}`}
+          onClick={() => setFilter("observacion")}
+        >
+          Observación
         </button>
       </div>
 
-      <div className="kpi-row">
-        {kpis.map((kpi, index) => (
-          <div key={index} className="kpi-card-report">
-            <div className="kpi-top">
-              <div className="kpi-icon-wrapper">{kpi.icon}</div>
-              <span className="kpi-badge">{kpi.badge}</span>
-            </div>
-
-            <div className="kpi-content">
-              <span className="kpi-label">{kpi.title}</span>
-              <h3 className="kpi-number">{kpi.value}</h3>
-              <span className="kpi-sub-text">{kpi.sub}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="chart-card-section">
-        <div className="chart-controls">
-          <div className="chart-tabs">
-            <button className="chart-tab active">Producción</button>
-            <button className="chart-tab">Consumo de Agua</button>
-            <button className="chart-tab">Financiero</button>
-          </div>
-
-          <div className="chart-actions">
-            <button className="btn-secondary">
-              <Calendar size={14} /> Rango
-            </button>
-            <button className="btn-secondary">
-              <Filter size={14} /> Filtros
-            </button>
-            <button className="btn-secondary">
-              <Download size={14} /> Exportar
-            </button>
-          </div>
+      <div className="reportes-stats">
+        <div className="stat-item">
+          <span className="stat-label">Total reportes</span>
+          <span className="stat-value">{reportes.length}</span>
         </div>
-
-        <h3 className="chart-title">Producción por Cultivo</h3>
-
-        <div className="bar-chart-container">
-          {chartData.map((data, i) => (
-            <div key={i} className="chart-group">
-              <div className="bars-wrapper">
-                <div
-                  className="bar"
-                  style={{ height: `${data.fresa || 0}%`, background: "#F472B6" }}
-                />
-                <div
-                  className="bar"
-                  style={{ height: `${data.lechuga || 0}%`, background: "#4ADE80" }}
-                />
-                <div
-                  className="bar"
-                  style={{ height: `${data.pimiento || 0}%`, background: "#FCD34D" }}
-                />
-                <div
-                  className="bar"
-                  style={{ height: `${data.tomate || 0}%`, background: "#EF4444" }}
-                />
-              </div>
-              <span className="chart-label">{data.month}</span>
-            </div>
-          ))}
+        <div className="stat-item">
+          <span className="stat-label">Este mes</span>
+          <span className="stat-value">
+            {reportes.filter(r => {
+              const fecha = new Date(r.date);
+              const hoy = new Date();
+              return fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear();
+            }).length}
+          </span>
         </div>
       </div>
 
-      <div className="reportes-list-section">
-        <h3>Reportes Generados</h3>
-
-        <div className="reportes-stack">
-          {reportes.map((rep) => (
-            <div key={rep.id} className="reporte-item">
-              <div className="reporte-left">
-                <div className="file-icon-wrapper">
-                  <FileText size={24} color="#8B6F47" />
+      <div className="reportes-grid">
+        {filteredReportes.length === 0 ? (
+          <div className="empty-state">
+            <FileText size={48} className="empty-icon" />
+            <h3>No hay reportes</h3>
+            <p>No se encontraron reportes con los filtros seleccionados</p>
+          </div>
+        ) : (
+          filteredReportes.map((rep) => (
+            <div key={rep.id} className="reporte-card">
+              <div className="reporte-card-header">
+                <div className="reporte-type-badge" data-type={rep.type?.toLowerCase()}>
+                  {rep.type === "RIEGO"}
+                  {rep.type === "FERTILIZACION"}
+                  {rep.type === "PLAGA"}
+                  {rep.type === "COSECHA"}
+                  {rep.type === "OBSERVACION"}
+                  <span>{rep.type}</span>
                 </div>
-                <div className="reporte-details">
-                  <h4>{rep.title}</h4>
-                  <p>{rep.date} · {rep.type} · {rep.size}</p>
+                <span className="reporte-date">
+                  <Calendar size={12} />
+                  {rep.date}
+                </span>
+              </div>
+
+              <h3 className="reporte-card-title">{rep.title}</h3>
+              
+              {rep.cultivo && (
+                <div className="reporte-cultivo">
+                  <Tag size={12} />
+                  <span>{rep.cultivo}</span>
+                </div>
+              )}
+
+              {rep.descripcion && (
+                <p className="reporte-descripcion">{rep.descripcion}</p>
+              )}
+
+              <div className="reporte-card-footer">
+                <div className="reporte-meta">
+                  <User size={12} />
+                  <span>{rep.autor || "Sistema"}</span>
+                  <span className="meta-separator">·</span>
+                  <span>{rep.size || "2.4 MB"}</span>
+                </div>
+
+                <div className="reporte-card-actions">
+                  <button 
+                    className="btn-icon"
+                    onClick={() => descargarReporte(rep.id)}
+                    title="Descargar"
+                  >
+                    <Download size={16} />
+                  </button>
+                  <button 
+                    className="btn-icon"
+                    onClick={() => {/* compartir */}}
+                    title="Compartir"
+                  >
+                    <Share2 size={16} />
+                  </button>
                 </div>
               </div>
 
-              <div className="reporte-actions">
-                {rep.status === "processing" ? (
-                  <button className="btn-processing">Procesando...</button>
-                ) : (
-                  <>
-                    <button className="btn-action-text">
-                      <Share2 size={16} /> Compartir
-                    </button>
-                    <button
-                      className="btn-action-text"
-                      onClick={() => descargarReporte(rep.id)}
-                    >
-                      <Download size={16} /> Descargar
-                    </button>
-                  </>
-                )}
-              </div>
+              {rep.status === "processing" && (
+                <div className="reporte-processing">
+                  <div className="processing-spinner"></div>
+                  <span>Procesando...</span>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          ))
+        )}
       </div>
     </div>
   );
