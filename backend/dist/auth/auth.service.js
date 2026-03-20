@@ -79,6 +79,7 @@ let AuthService = class AuthService {
             access_token: token,
             user: {
                 id: user.id,
+                name: user.name ?? user.email.split('@')[0],
                 email: user.email,
                 role: user.role,
                 darkMode: user.darkMode,
@@ -98,6 +99,7 @@ let AuthService = class AuthService {
             access_token: token,
             user: {
                 id: user.id,
+                name: user.name ?? user.email.split('@')[0],
                 email: user.email,
                 role: user.role,
                 darkMode: user.darkMode,

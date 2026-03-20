@@ -12,6 +12,7 @@ export declare class AuthService {
         access_token: string;
         user: {
             id: number;
+            name: string;
             email: string;
             role: import("@prisma/client").$Enums.Role;
             darkMode: boolean;
@@ -22,6 +23,7 @@ export declare class AuthService {
         access_token: string;
         user: {
             id: number;
+            name: string;
             email: string;
             role: import("@prisma/client").$Enums.Role;
             darkMode: boolean;
