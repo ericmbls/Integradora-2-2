@@ -9,8 +9,8 @@ export const authFetch = (url, options = {}) => {
     headers["Content-Type"] = "application/json";
   }
 
-  return fetch(`http://localhost:3000${url}`, {
+  return fetch(`${import.meta.env.VITE_API_URL}${url}`, {
     ...options,
-    headers
+    headers,
   });
 };

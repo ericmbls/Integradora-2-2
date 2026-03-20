@@ -12,7 +12,6 @@ import CultivoDetallePage from "./pages/Cultivos/CultivoDetallePage";
 import './App.css';
 
 function App() {
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -31,36 +30,12 @@ function App() {
   }, [darkMode]);
 
   const pageConfig = {
-    dashboard: {
-      component: DashboardPage,
-      title: 'Dashboard',
-      showButton: false
-    },
-    cultivos: {
-      component: CultivosPage,
-      title: 'Cultivos',
-      showButton: false
-    },
-    cultivoDetalle: {
-      component: CultivoDetallePage,
-      title: 'Detalle del Cultivo',
-      showButton: false
-    },
-    reportes: {
-      component: ReportesPage,
-      title: 'Reportes',
-      showButton: false
-    },
-    usuarios: {
-      component: UsuariosPage,
-      title: 'Usuarios',
-      showButton: false
-    },
-    ajustes: {
-      component: AjustesPage,
-      title: 'Ajustes',
-      showButton: false
-    }
+    dashboard: { component: DashboardPage, title: 'Dashboard', showButton: false },
+    cultivos: { component: CultivosPage, title: 'Cultivos', showButton: false },
+    cultivoDetalle: { component: CultivoDetallePage, title: 'Detalle del Cultivo', showButton: false },
+    reportes: { component: ReportesPage, title: 'Reportes', showButton: false },
+    usuarios: { component: UsuariosPage, title: 'Usuarios', showButton: false },
+    ajustes: { component: AjustesPage, title: 'Ajustes', showButton: false }
   };
 
   if (showLanding && !isLoggedIn) {
@@ -80,7 +55,6 @@ function App() {
 
   return (
     <div className="app-layout">
-
       <Sidebar
         currentPage={currentPage}
         onNavigate={(page) => {
@@ -93,26 +67,30 @@ function App() {
       />
 
       <main className="main-layout">
-
         <Header
           title={title}
           showButton={showButton}
           onMenuClick={() => setIsSidebarOpen(true)}
         />
 
-        <CurrentPage
-          darkMode={darkMode}
-          setDarkMode={setDarkMode}
-          token={token}
-          cultivo={selectedCultivo}
-          onOpenCultivo={(cultivo) => {
-            setSelectedCultivo(cultivo);
-            setCurrentPage('cultivoDetalle');
-          }}
-        />
-
+        {currentPage === "cultivoDetalle" ? (
+          <CultivoDetallePage
+            cultivo={selectedCultivo}
+            onBack={() => setCurrentPage("cultivos")}
+          />
+        ) : (
+          <CurrentPage
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            token={token}
+            cultivo={selectedCultivo}
+            onOpenCultivo={(cultivo) => {
+              setSelectedCultivo(cultivo);
+              setCurrentPage('cultivoDetalle');
+            }}
+          />
+        )}
       </main>
-
     </div>
   );
 }

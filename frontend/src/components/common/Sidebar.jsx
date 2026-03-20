@@ -1,10 +1,11 @@
-import { LayoutDashboard, Sprout, BarChart3, Users, Settings } from 'lucide-react';
-import './Sidebar.css';
+import { useState } from "react";
+import { LayoutDashboard, Sprout, BarChart3, Users, Settings, ChevronLeft, LogOut } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
 export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpen, onClose }) {
+
   const menu = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+    { id: 'dashboard', label: 'Inicio', icon: <LayoutDashboard size={20} /> },
     { id: 'cultivos', label: 'Cultivos', icon: <Sprout size={20} /> },
     { id: 'reportes', label: 'Reportes', icon: <BarChart3 size={20} /> },
   ];
@@ -15,35 +16,129 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
 
   menu.push({ id: 'ajustes', label: 'Ajustes', icon: <Settings size={20} /> });
 
+  // Clases base (sin modo oscuro)
+  const sidebarClasses = `
+    fixed lg:static inset-y-0 left-0 z-50
+    w-[260px] h-screen
+    px-6 py-8
+    flex flex-col
+    transform transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1)
+    ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+    bg-gradient-to-b from-[#fffaf8] via-[#fbefe1] to-[#f3e5ca] text-gray-800
+    shadow-[4px_0_30px_rgba(16,24,40,0.06)]
+    lg:shadow-none
+  `;
+
+  const headerTitleClasses = `
+    text-lg font-semibold
+    text-[#5c4731]
+  `;
+
+  const navItemClasses = (isActive) => `
+    w-full flex items-center gap-3.5 px-4 py-3 rounded-[14px]
+    text-sm font-medium transition-all duration-250 ease
+    ${isActive 
+      ? 'bg-white text-[#8b6f47] shadow-[0_6px_18px_rgba(139,111,71,0.12)]'
+      : 'text-gray-500 hover:bg-[rgba(139,111,71,0.08)] hover:text-[#5c4731]'
+    }
+  `;
+
+  const footerClasses = `
+    mt-auto pt-6 border-t
+    border-[rgba(139,111,71,0.15)]
+  `;
+
+  const avatarClasses = `
+    w-[38px] h-[38px] rounded-xl bg-[#8b6f47] text-white font-semibold
+    flex items-center justify-center shadow-sm
+  `;
+
+  const userNameClasses = `
+    text-sm font-semibold
+    text-[#5c4731]
+  `;
+
+  const userRoleClasses = `
+    text-xs
+    text-gray-400
+  `;
+
   return (
     <>
-      {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
+      {/* Overlay para móvil */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/45 z-40 lg:hidden backdrop-blur-[2px] animate-in fade-in duration-250"
+          onClick={onClose}
+        />
+      )}
 
-      <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-header">
-          <img src={logo} alt="Xihuitl" className="sidebar-logo" />
-          <h1>Xihuitl</h1>
+      {/* Sidebar */}
+      <aside className={sidebarClasses}>
+        {/* Header con logo */}
+        <div className="flex items-center gap-3 mb-10">
+          <img src={logo} alt="Tetlalli" className="w-[38px] h-[38px] rounded-xl object-cover" />
+          <h1 className={headerTitleClasses}>Tetlalli</h1>
+
+          {/* Botón cerrar en móvil */}
+          <button
+            onClick={onClose}
+            className="absolute top-8 right-4 p-2 lg:hidden hover:bg-black/5 rounded-lg transition-colors"
+          >
+            <ChevronLeft size={20} className="text-gray-500" />
+          </button>
         </div>
 
-        <nav className="sidebar-nav">
+        {/* Navegación */}
+        <nav className="flex-1 flex flex-col gap-2 overflow-y-auto">
           {menu.map(item => (
             <button
               key={item.id}
-              className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
-              onClick={() => onNavigate(item.id)}
-              type="button"
+              onClick={() => {
+                onNavigate(item.id);
+                if (window.innerWidth < 1024) onClose();
+              }}
+              className={navItemClasses(currentPage === item.id)}
             >
-              <span className="nav-icon">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className={`
+                flex items-center transition-colors
+                ${currentPage === item.id 
+                  ? 'text-[#8b6f47]' 
+                  : 'text-gray-400'
+                }
+              `}>
+                {item.icon}
+              </span>
+              <span className="flex-1 text-left">{item.label}</span>
+              
+              {/* Badge para admin */}
+              {item.id === 'usuarios' && role === 'admin' && (
+                <span className="px-2 py-1 rounded-lg text-xs font-medium bg-[#8b6f47]/10 text-[#8b6f47]">
+                  Admin
+                </span>
+              )}
             </button>
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="user-avatar">U1</div>
-          <div className="user-meta">
-            <span className="user-name">Usuario1</span>
-            <span className="user-role">Administrador</span>
+        {/* Footer con información de usuario */}
+        <div className={footerClasses}>
+          <div className="flex items-center gap-3">
+            <div className={avatarClasses}>
+              U1
+            </div>
+            <div className="flex flex-col">
+              <span className={userNameClasses}>Usuario1</span>
+              <span className={userRoleClasses}>
+                {role === 'admin' ? 'Administrador' : 'Usuario'}
+              </span>
+            </div>
+            <button 
+              className="ml-auto p-2 hover:bg-black/5 rounded-lg transition-colors group"
+              title="Cerrar sesión"
+            >
+              <LogOut size={16} className="text-gray-400" />
+            </button>
           </div>
         </div>
       </aside>

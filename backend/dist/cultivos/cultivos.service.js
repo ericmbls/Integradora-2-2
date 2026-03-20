@@ -52,38 +52,85 @@ let CultivosService = class CultivosService {
     constructor(prisma) {
         this.prisma = prisma;
     }
+    formatImage(cultivo) {
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        return {
+            ...cultivo,
+            imagen: cultivo.imagen ? `${baseUrl}${cultivo.imagen}` : null,
+        };
+    }
     async findAll() {
-        return this.prisma.cultivo.findMany();
+        const cultivos = await this.prisma.cultivo.findMany({
+            include: { user: true, reportes: true },
+        });
+        return cultivos.map(c => this.formatImage(c));
     }
     async findOne(id) {
         const cultivo = await this.prisma.cultivo.findUnique({
-            where: { id: Number(id) },
+            where: { id },
+            include: { user: true, reportes: true },
         });
         if (!cultivo) {
             throw new common_1.NotFoundException(`Cultivo con id ${id} no encontrado`);
         }
-        return cultivo;
+        return this.formatImage(cultivo);
     }
-    async create(data) {
-        return this.prisma.cultivo.create({ data });
+    async create(user, data) {
+        if (!user?.id) {
+            throw new common_1.NotFoundException('Usuario no autenticado');
+        }
+        const cultivo = await this.prisma.cultivo.create({
+            data: {
+                nombre: data.nombre,
+                descripcion: data.descripcion,
+                fechaSiembra: new Date(data.fechaSiembra),
+                ubicacion: data.ubicacion,
+                frecuenciaRiego: data.frecuenciaRiego,
+                estado: data.estado ?? 'activo',
+                imagen: data.imagen,
+                user: {
+                    connect: { id: user.id },
+                },
+            },
+            include: { user: true, reportes: true },
+        });
+        return this.formatImage(cultivo);
     }
     async update(id, data) {
         await this.findOne(id);
-        return this.prisma.cultivo.update({
-            where: { id: Number(id) },
-            data,
+        const updateData = {};
+        if (data.nombre !== undefined)
+            updateData.nombre = data.nombre;
+        if (data.descripcion !== undefined)
+            updateData.descripcion = data.descripcion;
+        if (data.fechaSiembra !== undefined)
+            updateData.fechaSiembra = new Date(data.fechaSiembra);
+        if (data.ubicacion !== undefined)
+            updateData.ubicacion = data.ubicacion;
+        if (data.frecuenciaRiego !== undefined)
+            updateData.frecuenciaRiego = data.frecuenciaRiego;
+        if (data.estado !== undefined)
+            updateData.estado = data.estado;
+        if (data.imagen !== undefined)
+            updateData.imagen = data.imagen;
+        const cultivo = await this.prisma.cultivo.update({
+            where: { id },
+            data: updateData,
+            include: { user: true, reportes: true },
         });
+        return this.formatImage(cultivo);
     }
     async remove(id) {
         const cultivo = await this.findOne(id);
         if (cultivo.imagen) {
-            const imagePath = path.join(process.cwd(), cultivo.imagen);
+            const relativePath = cultivo.imagen.replace(process.env.BASE_URL || 'http://localhost:3000', '');
+            const imagePath = path.join(process.cwd(), relativePath);
             if (fs.existsSync(imagePath)) {
                 fs.unlinkSync(imagePath);
             }
         }
         return this.prisma.cultivo.delete({
-            where: { id: Number(id) },
+            where: { id },
         });
     }
 };

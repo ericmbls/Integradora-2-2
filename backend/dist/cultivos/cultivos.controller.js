@@ -23,6 +23,13 @@ const update_cultivo_dto_1 = require("./dto/update-cultivo.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
 const role_decorator_1 = require("../auth/role.decorator");
+const storage = (0, multer_1.diskStorage)({
+    destination: './uploads',
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, uniqueSuffix + (0, path_1.extname)(file.originalname));
+    },
+});
 let CultivosController = class CultivosController {
     cultivosService;
     constructor(cultivosService) {
@@ -34,16 +41,17 @@ let CultivosController = class CultivosController {
     findOne(id) {
         return this.cultivosService.findOne(Number(id));
     }
-    create(createCultivoDto, file) {
-        return this.cultivosService.create({
-            ...createCultivoDto,
-            imagen: file ? `/uploads/${file.filename}` : undefined,
-        });
+    create(req, body, file) {
+        if (file) {
+            body.imagen = `/uploads/${file.filename}`;
+        }
+        return this.cultivosService.create(req.user, body);
     }
-    update(id, file, updateCultivoDto) {
+    update(req, id, file, updateCultivoDto) {
         return this.cultivosService.update(Number(id), {
             ...updateCultivoDto,
             imagen: file ? `/uploads/${file.filename}` : updateCultivoDto.imagen,
+            userId: req.user.sub,
         });
     }
     remove(id) {
@@ -66,37 +74,25 @@ __decorate([
 ], CultivosController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('imagen', {
-        storage: (0, multer_1.diskStorage)({
-            destination: './uploads',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                cb(null, uniqueSuffix + (0, path_1.extname)(file.originalname));
-            },
-        }),
-    })),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.UploadedFile)()),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('imagen', { storage })),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_cultivo_dto_1.CreateCultivoDto, Object]),
+    __metadata("design:paramtypes", [Object, create_cultivo_dto_1.CreateCultivoDto, Object]),
     __metadata("design:returntype", void 0)
 ], CultivosController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('imagen', {
-        storage: (0, multer_1.diskStorage)({
-            destination: './uploads',
-            filename: (req, file, cb) => {
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                cb(null, uniqueSuffix + (0, path_1.extname)(file.originalname));
-            },
-        }),
-    })),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.UploadedFile)()),
-    __param(2, (0, common_1.Body)()),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('imagen', { storage })),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.UploadedFile)()),
+    __param(3, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, update_cultivo_dto_1.UpdateCultivoDto]),
+    __metadata("design:paramtypes", [Object, String, Object, update_cultivo_dto_1.UpdateCultivoDto]),
     __metadata("design:returntype", void 0)
 ], CultivosController.prototype, "update", null);
 __decorate([

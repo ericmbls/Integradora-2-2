@@ -1,5 +1,5 @@
-const API_URL = "http://localhost:3000/api/usuarios";
-const AUTH_URL = "http://localhost:3000/api/auth";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/usuarios`;
+const AUTH_URL = `${import.meta.env.VITE_API_URL}/api/auth`;
 
 const getToken = () => localStorage.getItem("token");
 
@@ -37,9 +37,8 @@ export const createUsuarioAdmin = async (data) => {
 
 export const updateUsuario = async (id, data) => {
   if (data.role) {
-    data.role = data.role.toLowerCase(); 
+    data.role = data.role.toLowerCase();
   }
-
   return request(`${API_URL}/${id}`, {
     method: "PATCH",
     headers: {

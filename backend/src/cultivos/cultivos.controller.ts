@@ -9,16 +9,25 @@ import {
   UseInterceptors,
   UploadedFile,
   UseGuards,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { CultivosService } from './cultivos.service';
-import { CreateCultivoDto } from './dto/create-cultivo.dto';
-import { UpdateCultivoDto } from './dto/update-cultivo.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Role } from '../auth/role.decorator';
+  Request,
+} from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { diskStorage } from 'multer'
+import { extname } from 'path'
+import { CultivosService } from './cultivos.service'
+import { CreateCultivoDto } from './dto/create-cultivo.dto'
+import { UpdateCultivoDto } from './dto/update-cultivo.dto'
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { RolesGuard } from '../auth/roles.guard'
+import { Role } from '../auth/role.decorator'
+
+const storage = diskStorage({
+  destination: './uploads',
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+    cb(null, uniqueSuffix + extname(file.originalname))
+  },
+})
 
 @Controller('cultivos')
 export class CultivosController {
@@ -26,49 +35,33 @@ export class CultivosController {
 
   @Get()
   findAll() {
-    return this.cultivosService.findAll();
+    return this.cultivosService.findAll()
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.cultivosService.findOne(Number(id));
+    return this.cultivosService.findOne(Number(id))
   }
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('imagen', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, uniqueSuffix + extname(file.originalname));
-        },
-      }),
-    }),
-  )
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('imagen', { storage }))
   create(
-    @Body() createCultivoDto: CreateCultivoDto,
-    @UploadedFile() file: Express.Multer.File,
+    @Request() req,
+    @Body() body: CreateCultivoDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.cultivosService.create({
-      ...createCultivoDto,
-      imagen: file ? `/uploads/${file.filename}` : undefined,
-    });
+    if (file) {
+      body.imagen = `/uploads/${file.filename}`
+    }
+    return this.cultivosService.create(req.user, body)
   }
 
   @Patch(':id')
-  @UseInterceptors(
-    FileInterceptor('imagen', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, uniqueSuffix + extname(file.originalname));
-        },
-      }),
-    }),
-  )
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('imagen', { storage }))
   update(
+    @Request() req,
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() updateCultivoDto: UpdateCultivoDto,
@@ -76,13 +69,14 @@ export class CultivosController {
     return this.cultivosService.update(Number(id), {
       ...updateCultivoDto,
       imagen: file ? `/uploads/${file.filename}` : updateCultivoDto.imagen,
-    });
+      userId: req.user.sub,
+    })
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
   remove(@Param('id') id: string) {
-    return this.cultivosService.remove(Number(id));
+    return this.cultivosService.remove(Number(id))
   }
 }

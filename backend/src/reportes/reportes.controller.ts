@@ -11,24 +11,42 @@ import {
   UseInterceptors,
   Res,
 } from "@nestjs/common";
-
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Express, Response } from "express";
 import { ReportesService } from "./reportes.service";
 import { CreateReporteDto } from "./dto/create-reporte.dto";
 import { UpdateReporteDto } from "./dto/update-reporte.dto";
+import { multerConfig } from "./upload.config";
+import * as path from "path";
+import * as fs from "fs";
+import sharp from "sharp";
 
 @Controller("reportes")
 export class ReportesController {
   constructor(private readonly reportesService: ReportesService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor("imagen"))
+  @UseInterceptors(FileInterceptor("imagen", multerConfig))
   async create(
     @Body() body: any,
     @UploadedFile() file?: Express.Multer.File
   ) {
-    const imagen = file ? `/uploads/${file.filename}` : null;
+    let imagen: string | null = null;
+
+    if (file) {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const filename = file.filename.replace(ext, ".png");
+      const outputPath = path.join(process.cwd(), "uploads", filename);
+
+      await sharp(file.path).png().toFile(outputPath);
+
+      // Borrar el archivo original de forma asíncrona para evitar EBUSY
+      fs.unlink(file.path, (err) => {
+        if (err) console.error("No se pudo borrar el archivo original:", err);
+      });
+
+      imagen = filename;
+    }
 
     const dto: CreateReporteDto = {
       titulo: body.titulo,
@@ -76,9 +94,10 @@ export class ReportesController {
       res.set({
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=reporte-${id}.pdf`,
+        "Content-Length": fileBuffer.length,
       });
 
-      res.send(fileBuffer);
+      res.end(fileBuffer);
     } catch (error) {
       console.error(error);
       res.status(500).send("Error al generar o descargar el reporte");

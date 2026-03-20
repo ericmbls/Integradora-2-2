@@ -5,42 +5,37 @@ import {
   IsDateString,
   IsEnum,
   IsOptional,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { EstadoCultivo } from '@prisma/client';
+} from 'class-validator'
+import { Type } from 'class-transformer'
+import { EstadoCultivo } from '@prisma/client'
 
 export class CreateCultivoDto {
   @IsString()
   @IsNotEmpty()
-  nombre: string;
+  nombre: string
 
   @IsString()
   @IsOptional()
-  descripcion?: string;
+  descripcion?: string
 
   @IsDateString()
   @IsNotEmpty()
-  fechaSiembra: string;
+  fechaSiembra: string
 
   @IsString()
   @IsNotEmpty()
-  ubicacion: string;
+  ubicacion: string
 
   @Type(() => Number)
   @IsInt()
   @IsNotEmpty()
-  frecuenciaRiego: number;
+  frecuenciaRiego: number
 
   @IsEnum(EstadoCultivo)
   @IsOptional()
-  estado?: EstadoCultivo;
-
-  @Type(() => Number)
-  @IsInt()
-  @IsNotEmpty()
-  userId: number;
+  estado?: EstadoCultivo
 
   @IsString()
   @IsOptional()
-  imagen?: string;
+  imagen?: string
 }

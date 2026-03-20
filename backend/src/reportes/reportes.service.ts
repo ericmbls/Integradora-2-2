@@ -1,8 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateReporteDto } from "./dto/create-reporte.dto";
 import { UpdateReporteDto } from "./dto/update-reporte.dto";
 import PDFDocument from "pdfkit";
+import * as fs from "fs";
+import * as path from "path";
 
 @Injectable()
 export class ReportesService {
@@ -30,13 +32,18 @@ export class ReportesService {
   async findAll() {
     const reportes = await this.prisma.reporte.findMany({
       orderBy: { createdAt: "desc" },
+      include: { cultivo: true, user: true },
     });
 
     return reportes.map((r) => ({
       id: r.id,
       title: r.titulo,
-      date: r.createdAt.toLocaleDateString(),
+      date: r.createdAt.toLocaleDateString("es-MX"),
       type: r.tipo,
+      descripcion: r.descripcion,
+      cultivo: r.cultivo?.nombre ?? null,
+      autor: r.user?.name ?? "Sistema",
+      imagen: r.imagen ? `${process.env.BASE_URL}/uploads/${r.imagen}` : null,
       size: "120 KB",
       status: "ready",
     }));
@@ -68,21 +75,48 @@ export class ReportesService {
   }
 
   async generarPdf(id: number) {
-    const reporte = await this.prisma.reporte.findUnique({ where: { id } });
-    if (!reporte) throw new Error("Reporte no encontrado");
+    const reporte = await this.prisma.reporte.findUnique({
+      where: { id },
+      include: { cultivo: true, user: true },
+    });
+    if (!reporte) throw new NotFoundException("Reporte no encontrado");
 
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ margin: 50 });
     const buffers: Buffer[] = [];
 
     doc.on("data", buffers.push.bind(buffers));
 
     doc.fontSize(20).text("Reporte de Cultivo", { align: "center" });
     doc.moveDown();
+
     doc.fontSize(12).text(`ID: ${reporte.id}`);
     doc.text(`Título: ${reporte.titulo}`);
-    doc.text(`Descripción: ${reporte.descripcion}`);
     doc.text(`Tipo: ${reporte.tipo}`);
-    doc.text(`Fecha: ${reporte.createdAt}`);
+    doc.text(`Fecha: ${reporte.createdAt.toLocaleDateString("es-MX")}`);
+    if (reporte.cultivo) doc.text(`Cultivo: ${reporte.cultivo.nombre}`);
+    if (reporte.user) doc.text(`Autor: ${reporte.user.name}`);
+    doc.moveDown();
+
+    doc.fontSize(14).text("Descripción:", { underline: true });
+    doc.fontSize(12).text(reporte.descripcion || "Sin descripción", {
+      align: "justify",
+    });
+    doc.moveDown();
+
+    if (reporte.imagen) {
+      const imagePath = path.join(process.cwd(), "uploads", reporte.imagen);
+      if (fs.existsSync(imagePath)) {
+        doc.image(imagePath, {
+          fit: [400, 300],
+          align: "center",
+          valign: "center",
+        });
+        doc.moveDown();
+      }
+    }
+
+    doc.moveDown(2);
+    doc.fontSize(10).text("Sistema Tetlalli © 2026", { align: "center" });
 
     doc.end();
 

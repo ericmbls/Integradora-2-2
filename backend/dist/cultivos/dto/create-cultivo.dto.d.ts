@@ -6,6 +6,5 @@ export declare class CreateCultivoDto {
     ubicacion: string;
     frecuenciaRiego: number;
     estado?: EstadoCultivo;
-    userId: number;
     imagen?: string;
 }

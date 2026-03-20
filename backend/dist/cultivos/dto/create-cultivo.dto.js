@@ -20,7 +20,6 @@ class CreateCultivoDto {
     ubicacion;
     frecuenciaRiego;
     estado;
-    userId;
     imagen;
 }
 exports.CreateCultivoDto = CreateCultivoDto;
@@ -55,12 +54,6 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateCultivoDto.prototype, "estado", void 0);
-__decorate([
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsInt)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", Number)
-], CreateCultivoDto.prototype, "userId", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
