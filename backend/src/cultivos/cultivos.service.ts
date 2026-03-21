@@ -50,7 +50,7 @@ export class CultivosService {
         ubicacion: data.ubicacion,
         frecuenciaRiego: data.frecuenciaRiego,
         estado: data.estado ?? 'activo',
-        imagen: data.imagen, // siempre debe ser `/uploads/...`
+        imagen: data.imagen, 
         user: {
           connect: { id: user.id },
         },
@@ -75,7 +75,7 @@ export class CultivosService {
     if (data.ubicacion !== undefined) updateData.ubicacion = data.ubicacion
     if (data.frecuenciaRiego !== undefined) updateData.frecuenciaRiego = data.frecuenciaRiego
     if (data.estado !== undefined) updateData.estado = data.estado
-    if (data.imagen !== undefined) updateData.imagen = data.imagen // `/uploads/...`
+    if (data.imagen !== undefined) updateData.imagen = data.imagen 
 
     const cultivo = await this.prisma.cultivo.update({
       where: { id },

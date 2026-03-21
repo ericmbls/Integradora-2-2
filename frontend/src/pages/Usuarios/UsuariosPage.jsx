@@ -67,18 +67,25 @@ export default function UsuariosPage() {
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      const name = user?.name?.toLowerCase() || "";
       const email = user?.email?.toLowerCase() || "";
       const role = user?.role?.toLowerCase() || "";
       return (
+        name.includes(searchTerm.toLowerCase()) ||
         email.includes(searchTerm.toLowerCase()) ||
         role.includes(searchTerm.toLowerCase())
       );
     });
   }, [searchTerm, users]);
 
-  const getInitials = (email) => {
-    if (!email) return "??";
-    return email.slice(0, 2).toUpperCase();
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const getRoleBadgeColor = (role) => {
@@ -129,7 +136,7 @@ export default function UsuariosPage() {
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por email o rol"
+              placeholder="Buscar por nombre, email o rol"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/20 focus:border-[#8B6F47] transition-all bg-white"
@@ -152,11 +159,18 @@ export default function UsuariosPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-[#8B6F47] to-[#6b5436] rounded-xl flex items-center justify-center text-white font-semibold text-sm shadow-sm group-hover:shadow-md transition-shadow">
-                        {getInitials(user?.email)}
+                        {getInitials(user?.name)}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Mail size={12} className="text-gray-400" />
-                        <span className="text-sm font-medium text-gray-800">{user?.email || "Sin email"}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-800">
+                          {user?.name || "Sin nombre"}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Mail size={12} className="text-gray-400" />
+                          <span className="text-xs text-gray-400">
+                            {user?.email || "Sin email"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </td>

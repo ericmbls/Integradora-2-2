@@ -27,23 +27,17 @@ export class ReportesController {
 
   @Post()
   @UseInterceptors(FileInterceptor("imagen", multerConfig))
-  async create(
-    @Body() body: any,
-    @UploadedFile() file?: Express.Multer.File
-  ) {
+  async create(@Body() body: any, @UploadedFile() file?: Express.Multer.File) {
     let imagen: string | null = null;
 
     if (file) {
       const ext = path.extname(file.originalname).toLowerCase();
-      const filename = file.filename.replace(ext, ".png");
+      const baseName = path.basename(file.filename, ext);
+      const filename = `${baseName}-processed.png`;
       const outputPath = path.join(process.cwd(), "uploads", filename);
 
       await sharp(file.path).png().toFile(outputPath);
-
-      // Borrar el archivo original de forma asíncrona para evitar EBUSY
-      fs.unlink(file.path, (err) => {
-        if (err) console.error("No se pudo borrar el archivo original:", err);
-      });
+      fs.unlink(file.path, () => null);
 
       imagen = filename;
     }
@@ -90,16 +84,13 @@ export class ReportesController {
   ) {
     try {
       const fileBuffer = await this.reportesService.generarPdf(id);
-
       res.set({
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=reporte-${id}.pdf`,
         "Content-Length": fileBuffer.length,
       });
-
       res.end(fileBuffer);
-    } catch (error) {
-      console.error(error);
+    } catch {
       res.status(500).send("Error al generar o descargar el reporte");
     }
   }

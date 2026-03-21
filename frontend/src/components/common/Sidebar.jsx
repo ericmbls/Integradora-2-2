@@ -1,8 +1,9 @@
-import { useState } from "react";
 import { LayoutDashboard, Sprout, BarChart3, Users, Settings, ChevronLeft, LogOut } from 'lucide-react';
 import logo from '../../assets/logo.png';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpen, onClose }) {
+  const { user, logout } = useAuth();
 
   const menu = [
     { id: 'dashboard', label: 'Inicio', icon: <LayoutDashboard size={20} /> },
@@ -16,7 +17,6 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
 
   menu.push({ id: 'ajustes', label: 'Ajustes', icon: <Settings size={20} /> });
 
-  // Clases base (sin modo oscuro)
   const sidebarClasses = `
     fixed lg:static inset-y-0 left-0 z-50
     w-[260px] h-screen
@@ -65,7 +65,6 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
 
   return (
     <>
-      {/* Overlay para móvil */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/45 z-40 lg:hidden backdrop-blur-[2px] animate-in fade-in duration-250"
@@ -73,14 +72,10 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
         />
       )}
 
-      {/* Sidebar */}
       <aside className={sidebarClasses}>
-        {/* Header con logo */}
         <div className="flex items-center gap-3 mb-10">
           <img src={logo} alt="Tetlalli" className="w-[38px] h-[38px] rounded-xl object-cover" />
           <h1 className={headerTitleClasses}>Tetlalli</h1>
-
-          {/* Botón cerrar en móvil */}
           <button
             onClick={onClose}
             className="absolute top-8 right-4 p-2 lg:hidden hover:bg-black/5 rounded-lg transition-colors"
@@ -89,7 +84,6 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
           </button>
         </div>
 
-        {/* Navegación */}
         <nav className="flex-1 flex flex-col gap-2 overflow-y-auto">
           {menu.map(item => (
             <button
@@ -110,8 +104,6 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
                 {item.icon}
               </span>
               <span className="flex-1 text-left">{item.label}</span>
-              
-              {/* Badge para admin */}
               {item.id === 'usuarios' && role === 'admin' && (
                 <span className="px-2 py-1 rounded-lg text-xs font-medium bg-[#8b6f47]/10 text-[#8b6f47]">
                   Admin
@@ -121,19 +113,17 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
           ))}
         </nav>
 
-        {/* Footer con información de usuario */}
         <div className={footerClasses}>
           <div className="flex items-center gap-3">
             <div className={avatarClasses}>
-              U1
+              {user?.name?.[0] || "U"}
             </div>
             <div className="flex flex-col">
-              <span className={userNameClasses}>Usuario1</span>
-              <span className={userRoleClasses}>
-                {role === 'admin' ? 'Administrador' : 'Usuario'}
-              </span>
+              <span className={userNameClasses}>{user?.name || "Invitado"}</span>
+              <span className={userRoleClasses}>{user?.role || "Usuario"}</span>
             </div>
             <button 
+              onClick={logout}
               className="ml-auto p-2 hover:bg-black/5 rounded-lg transition-colors group"
               title="Cerrar sesión"
             >

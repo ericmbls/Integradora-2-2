@@ -4,12 +4,14 @@ import path from "path";
 
 export const multerConfig = {
   storage: diskStorage({
-    destination: (req, file, cb) => {
+    destination: (_, __, cb) => {
       cb(null, path.join(process.cwd(), "uploads"));
     },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, uniqueSuffix + extname(file.originalname));
+    filename: (_, file, cb) => {
+      const timestamp = Date.now();
+      const random = Math.round(Math.random() * 1e9);
+      const ext = extname(file.originalname).toLowerCase();
+      cb(null, `${timestamp}-${random}${ext}`);
     },
   }),
 };

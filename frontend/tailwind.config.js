@@ -5,7 +5,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Tus colores personalizados
         cream: '#fcfbf9',
         primary: '#8B6F47',
       },

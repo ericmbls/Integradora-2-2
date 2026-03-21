@@ -4,7 +4,18 @@ const AUTH_URL = `${import.meta.env.VITE_API_URL}/api/auth`;
 const getToken = () => localStorage.getItem("token");
 
 const request = async (url, options = {}) => {
-  const res = await fetch(url, options);
+  const token = getToken();
+
+  const headers = {
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+
+  const res = await fetch(url, {
+    ...options,
+    headers
+  });
+
   if (!res.ok) {
     let message = "Error en la solicitud";
     try {
@@ -13,23 +24,19 @@ const request = async (url, options = {}) => {
     } catch {}
     throw new Error(message);
   }
+
   return res.json();
 };
 
 export const getUsuarios = async () => {
-  return request(API_URL, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`
-    }
-  });
+  return request(API_URL);
 };
 
 export const createUsuarioAdmin = async (data) => {
   return request(API_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(data)
   });
@@ -39,11 +46,11 @@ export const updateUsuario = async (id, data) => {
   if (data.role) {
     data.role = data.role.toLowerCase();
   }
+
   return request(`${API_URL}/${id}`, {
     method: "PATCH",
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(data)
   });
@@ -51,10 +58,7 @@ export const updateUsuario = async (id, data) => {
 
 export const deleteUsuario = async (id) => {
   return request(`${API_URL}/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${getToken()}`
-    }
+    method: "DELETE"
   });
 };
 

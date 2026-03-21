@@ -7,21 +7,30 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
   }, []);
 
   const login = (token, userData) => {
+    const normalizedUser = {
+      id: userData.id,
+      name: userData.name || userData.email?.split('@')[0] || "Usuario",
+      email: userData.email,
+      role: userData.role,
+      darkMode: userData.darkMode ?? false,
+      language: userData.language || "es",
+      farmName: userData.farmName || null,
+      location: userData.location || null,
+    };
+
     localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(normalizedUser));
+    setUser(normalizedUser);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.clear();
     setUser(null);
   };
 
