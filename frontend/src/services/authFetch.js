@@ -5,7 +5,6 @@ export const authFetch = (url, options = {}) => {
     ...(options.headers || {}),
   };
 
-  // 🔥 SOLO si hay token válido
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }

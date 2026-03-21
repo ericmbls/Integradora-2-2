@@ -11,12 +11,8 @@ export class ReportesService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateReporteDto, imagen: string | null, userId: number) {
-    // 🔒 Validar que el cultivo pertenece al usuario
     const cultivo = await this.prisma.cultivo.findFirst({
-      where: {
-        id: dto.cultivoId,
-        userId
-      }
+      where: { id: dto.cultivoId, userId }
     });
 
     if (!cultivo) {
@@ -37,10 +33,7 @@ export class ReportesService {
 
   async findByCultivo(cultivoId: number, userId: number) {
     return this.prisma.reporte.findMany({
-      where: {
-        cultivoId,
-        userId
-      },
+      where: { cultivoId, userId },
       orderBy: { createdAt: "desc" },
     });
   }
@@ -83,7 +76,6 @@ export class ReportesService {
   }
 
   async getChart(userId: number) {
-    // 🔧 aquí podrías hacerlo dinámico después
     return [
       { month: "Ene", fresa: 40, lechuga: 30, pimiento: 20, tomate: 50 },
       { month: "Feb", fresa: 60, lechuga: 20, pimiento: 30, tomate: 40 },
@@ -98,10 +90,7 @@ export class ReportesService {
 
   async generarPdf(id: number, userId: number) {
     const reporte = await this.prisma.reporte.findFirst({
-      where: {
-        id,
-        userId
-      },
+      where: { id, userId },
       include: { cultivo: true, user: true },
     });
 
@@ -126,18 +115,13 @@ export class ReportesService {
     doc.moveDown();
 
     doc.fontSize(14).text("Descripción:", { underline: true });
-    doc.fontSize(12).text(reporte.descripcion || "Sin descripción", {
-      align: "justify",
-    });
+    doc.fontSize(12).text(reporte.descripcion || "Sin descripción", { align: "justify" });
     doc.moveDown();
 
     if (reporte.imagen) {
       const imagePath = path.join(process.cwd(), "uploads", reporte.imagen);
       if (fs.existsSync(imagePath)) {
-        doc.image(imagePath, {
-          fit: [400, 300],
-          align: "center",
-        });
+        doc.image(imagePath, { fit: [400, 300], align: "center" });
         doc.moveDown();
       }
     }
@@ -148,19 +132,14 @@ export class ReportesService {
     doc.end();
 
     return new Promise<Buffer>((resolve) => {
-      doc.on("end", () => {
-        resolve(Buffer.concat(buffers));
-      });
+      doc.on("end", () => resolve(Buffer.concat(buffers)));
     });
   }
 
   async update(id: number, dto: UpdateReporteDto, userId: number) {
-    const reporte = await this.prisma.reporte.findUnique({
-      where: { id }
-    });
+    const reporte = await this.prisma.reporte.findUnique({ where: { id } });
 
     if (!reporte) throw new NotFoundException("Reporte no encontrado");
-
     if (reporte.userId !== userId) {
       throw new ForbiddenException("No puedes editar este reporte");
     }
@@ -172,18 +151,13 @@ export class ReportesService {
   }
 
   async remove(id: number, userId: number) {
-    const reporte = await this.prisma.reporte.findUnique({
-      where: { id }
-    });
+    const reporte = await this.prisma.reporte.findUnique({ where: { id } });
 
     if (!reporte) throw new NotFoundException("Reporte no encontrado");
-
     if (reporte.userId !== userId) {
       throw new ForbiddenException("No puedes eliminar este reporte");
     }
 
-    return this.prisma.reporte.delete({
-      where: { id }
-    });
+    return this.prisma.reporte.delete({ where: { id } });
   }
 }
