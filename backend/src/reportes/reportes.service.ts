@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateReporteDto } from "./dto/create-reporte.dto";
 import { UpdateReporteDto } from "./dto/update-reporte.dto";
@@ -10,27 +10,44 @@ import * as path from "path";
 export class ReportesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateReporteDto, imagen?: string | null) {
+  async create(dto: CreateReporteDto, imagen: string | null, userId: number) {
+    // 🔒 Validar que el cultivo pertenece al usuario
+    const cultivo = await this.prisma.cultivo.findFirst({
+      where: {
+        id: dto.cultivoId,
+        userId
+      }
+    });
+
+    if (!cultivo) {
+      throw new ForbiddenException("No puedes crear reportes para este cultivo");
+    }
+
     return this.prisma.reporte.create({
       data: {
         titulo: dto.titulo,
         descripcion: dto.descripcion,
         tipo: dto.tipo,
         cultivoId: dto.cultivoId,
-        imagen: imagen ?? null,
+        imagen,
+        userId
       },
     });
   }
 
-  async findByCultivo(cultivoId: number) {
+  async findByCultivo(cultivoId: number, userId: number) {
     return this.prisma.reporte.findMany({
-      where: { cultivoId },
+      where: {
+        cultivoId,
+        userId
+      },
       orderBy: { createdAt: "desc" },
     });
   }
 
-  async findAll() {
+  async findAll(userId: number) {
     const reportes = await this.prisma.reporte.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
       include: { cultivo: true, user: true },
     });
@@ -49,10 +66,14 @@ export class ReportesService {
     }));
   }
 
-  async getKpis() {
-    const total = await this.prisma.reporte.count();
-    const riego = await this.prisma.reporte.count({ where: { tipo: "RIEGO" } });
-    const plaga = await this.prisma.reporte.count({ where: { tipo: "PLAGA" } });
+  async getKpis(userId: number) {
+    const total = await this.prisma.reporte.count({ where: { userId } });
+    const riego = await this.prisma.reporte.count({
+      where: { tipo: "RIEGO", userId }
+    });
+    const plaga = await this.prisma.reporte.count({
+      where: { tipo: "PLAGA", userId }
+    });
 
     return [
       { title: "Reportes Totales", value: total, badge: "Total", sub: "Registros del sistema", icon: "📄" },
@@ -61,7 +82,8 @@ export class ReportesService {
     ];
   }
 
-  async getChart() {
+  async getChart(userId: number) {
+    // 🔧 aquí podrías hacerlo dinámico después
     return [
       { month: "Ene", fresa: 40, lechuga: 30, pimiento: 20, tomate: 50 },
       { month: "Feb", fresa: 60, lechuga: 20, pimiento: 30, tomate: 40 },
@@ -70,16 +92,22 @@ export class ReportesService {
     ];
   }
 
-  async generarReporte() {
+  async generarReporte(userId: number) {
     return { message: "Reporte generado correctamente" };
   }
 
-  async generarPdf(id: number) {
-    const reporte = await this.prisma.reporte.findUnique({
-      where: { id },
+  async generarPdf(id: number, userId: number) {
+    const reporte = await this.prisma.reporte.findFirst({
+      where: {
+        id,
+        userId
+      },
       include: { cultivo: true, user: true },
     });
-    if (!reporte) throw new NotFoundException("Reporte no encontrado");
+
+    if (!reporte) {
+      throw new NotFoundException("Reporte no encontrado");
+    }
 
     const doc = new PDFDocument({ margin: 50 });
     const buffers: Buffer[] = [];
@@ -109,7 +137,6 @@ export class ReportesService {
         doc.image(imagePath, {
           fit: [400, 300],
           align: "center",
-          valign: "center",
         });
         doc.moveDown();
       }
@@ -127,11 +154,36 @@ export class ReportesService {
     });
   }
 
-  async update(id: number, dto: UpdateReporteDto) {
-    return this.prisma.reporte.update({ where: { id }, data: dto });
+  async update(id: number, dto: UpdateReporteDto, userId: number) {
+    const reporte = await this.prisma.reporte.findUnique({
+      where: { id }
+    });
+
+    if (!reporte) throw new NotFoundException("Reporte no encontrado");
+
+    if (reporte.userId !== userId) {
+      throw new ForbiddenException("No puedes editar este reporte");
+    }
+
+    return this.prisma.reporte.update({
+      where: { id },
+      data: dto
+    });
   }
 
-  async remove(id: number) {
-    return this.prisma.reporte.delete({ where: { id } });
+  async remove(id: number, userId: number) {
+    const reporte = await this.prisma.reporte.findUnique({
+      where: { id }
+    });
+
+    if (!reporte) throw new NotFoundException("Reporte no encontrado");
+
+    if (reporte.userId !== userId) {
+      throw new ForbiddenException("No puedes eliminar este reporte");
+    }
+
+    return this.prisma.reporte.delete({
+      where: { id }
+    });
   }
 }

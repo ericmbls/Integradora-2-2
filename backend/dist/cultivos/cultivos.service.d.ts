@@ -5,16 +5,15 @@ export declare class CultivosService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     private formatImage;
-    findAll(): Promise<any[]>;
-    findOne(id: number): Promise<any>;
+    findAll(userId: number): Promise<any[]>;
+    findOne(id: number, userId: number): Promise<any>;
     create(user: any, data: CreateCultivoDto & {
         imagen?: string;
     }): Promise<any>;
-    update(id: number, data: UpdateCultivoDto & {
+    update(id: number, userId: number, data: UpdateCultivoDto & {
         imagen?: string;
-        userId?: number;
     }): Promise<any>;
-    remove(id: number): Promise<{
+    remove(id: number, userId: number): Promise<{
         id: number;
         createdAt: Date;
         nombre: string;

@@ -6,16 +6,20 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch {
+      localStorage.removeItem("user");
     }
   }, []);
 
   const login = (token, userData) => {
     const normalizedUser = {
       id: userData.id,
-      name: userData.name || userData.email?.split('@')[0] || "Usuario",
+      name: userData.name || userData.email?.split("@")[0] || "Usuario",
       email: userData.email,
       role: userData.role,
       darkMode: userData.darkMode ?? false,
@@ -30,12 +34,27 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 
+  const getToken = () => {
+    return localStorage.getItem("token");
+  };
+
+  const isAuthenticated = !!user;
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        getToken,
+        isAuthenticated,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

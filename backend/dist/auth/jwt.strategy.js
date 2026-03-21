@@ -26,7 +26,6 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         this.configService = configService;
     }
     async validate(payload) {
-        console.log('JWT Payload:', payload);
         return {
             id: payload.sub,
             email: payload.email,

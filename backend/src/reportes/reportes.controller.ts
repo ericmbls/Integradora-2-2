@@ -10,6 +10,8 @@ import {
   UploadedFile,
   UseInterceptors,
   Res,
+  UseGuards,
+  Request,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Express, Response } from "express";
@@ -20,14 +22,20 @@ import { multerConfig } from "./upload.config";
 import * as path from "path";
 import * as fs from "fs";
 import sharp from "sharp";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @Controller("reportes")
+@UseGuards(JwtAuthGuard)
 export class ReportesController {
   constructor(private readonly reportesService: ReportesService) {}
 
   @Post()
   @UseInterceptors(FileInterceptor("imagen", multerConfig))
-  async create(@Body() body: any, @UploadedFile() file?: Express.Multer.File) {
+  async create(
+    @Request() req,
+    @Body() body: any,
+    @UploadedFile() file?: Express.Multer.File
+  ) {
     let imagen: string | null = null;
 
     if (file) {
@@ -49,46 +57,52 @@ export class ReportesController {
       cultivoId: Number(body.cultivoId),
     };
 
-    return this.reportesService.create(dto, imagen);
+    return this.reportesService.create(dto, imagen, req.user.id);
   }
 
   @Get("cultivo/:id")
-  findByCultivo(@Param("id", ParseIntPipe) cultivoId: number) {
-    return this.reportesService.findByCultivo(cultivoId);
+  findByCultivo(
+    @Param("id", ParseIntPipe) cultivoId: number,
+    @Request() req
+  ) {
+    return this.reportesService.findByCultivo(cultivoId, req.user.id);
   }
 
   @Get("list")
-  findAll() {
-    return this.reportesService.findAll();
+  findAll(@Request() req) {
+    return this.reportesService.findAll(req.user.id);
   }
 
   @Get("kpis")
-  getKpis() {
-    return this.reportesService.getKpis();
+  getKpis(@Request() req) {
+    return this.reportesService.getKpis(req.user.id);
   }
 
   @Get("chart")
-  getChart() {
-    return this.reportesService.getChart();
+  getChart(@Request() req) {
+    return this.reportesService.getChart(req.user.id);
   }
 
   @Post("generar")
-  generarReporte() {
-    return this.reportesService.generarReporte();
+  generarReporte(@Request() req) {
+    return this.reportesService.generarReporte(req.user.id);
   }
 
   @Get(":id/descargar")
   async descargarReporte(
     @Param("id", ParseIntPipe) id: number,
+    @Request() req,
     @Res() res: Response
   ) {
     try {
-      const fileBuffer = await this.reportesService.generarPdf(id);
+      const fileBuffer = await this.reportesService.generarPdf(id, req.user.id);
+
       res.set({
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename=reporte-${id}.pdf`,
         "Content-Length": fileBuffer.length,
       });
+
       res.end(fileBuffer);
     } catch {
       res.status(500).send("Error al generar o descargar el reporte");
@@ -96,12 +110,16 @@ export class ReportesController {
   }
 
   @Patch(":id")
-  update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateReporteDto) {
-    return this.reportesService.update(id, dto);
+  update(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateReporteDto,
+    @Request() req
+  ) {
+    return this.reportesService.update(id, dto, req.user.id);
   }
 
   @Delete(":id")
-  remove(@Param("id", ParseIntPipe) id: number) {
-    return this.reportesService.remove(id);
+  remove(@Param("id", ParseIntPipe) id: number, @Request() req) {
+    return this.reportesService.remove(id, req.user.id);
   }
 }

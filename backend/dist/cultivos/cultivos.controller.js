@@ -21,8 +21,6 @@ const cultivos_service_1 = require("./cultivos.service");
 const create_cultivo_dto_1 = require("./dto/create-cultivo.dto");
 const update_cultivo_dto_1 = require("./dto/update-cultivo.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
-const roles_guard_1 = require("../auth/roles.guard");
-const role_decorator_1 = require("../auth/role.decorator");
 const storage = (0, multer_1.diskStorage)({
     destination: './uploads',
     filename: (req, file, cb) => {
@@ -35,11 +33,11 @@ let CultivosController = class CultivosController {
     constructor(cultivosService) {
         this.cultivosService = cultivosService;
     }
-    findAll() {
-        return this.cultivosService.findAll();
+    findAll(req) {
+        return this.cultivosService.findAll(req.user.id);
     }
-    findOne(id) {
-        return this.cultivosService.findOne(Number(id));
+    findOne(id, req) {
+        return this.cultivosService.findOne(Number(id), req.user.id);
     }
     create(req, body, file) {
         if (file) {
@@ -47,34 +45,34 @@ let CultivosController = class CultivosController {
         }
         return this.cultivosService.create(req.user, body);
     }
-    update(req, id, file, updateCultivoDto) {
-        return this.cultivosService.update(Number(id), {
-            ...updateCultivoDto,
-            imagen: file ? `/uploads/${file.filename}` : updateCultivoDto.imagen,
-            userId: req.user.sub,
+    update(req, id, file, dto) {
+        return this.cultivosService.update(Number(id), req.user.id, {
+            ...dto,
+            imagen: file ? `/uploads/${file.filename}` : dto.imagen,
         });
     }
-    remove(id) {
-        return this.cultivosService.remove(Number(id));
+    remove(id, req) {
+        return this.cultivosService.remove(Number(id), req.user.id);
     }
 };
 exports.CultivosController = CultivosController;
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], CultivosController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], CultivosController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('imagen', { storage })),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -85,7 +83,6 @@ __decorate([
 ], CultivosController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('imagen', { storage })),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
@@ -97,15 +94,15 @@ __decorate([
 ], CultivosController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, role_decorator_1.Role)('admin'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], CultivosController.prototype, "remove", null);
 exports.CultivosController = CultivosController = __decorate([
     (0, common_1.Controller)('cultivos'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [cultivos_service_1.CultivosService])
 ], CultivosController);
 //# sourceMappingURL=cultivos.controller.js.map

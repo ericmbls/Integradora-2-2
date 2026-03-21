@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateCultivoDto } from './dto/create-cultivo.dto'
 import { UpdateCultivoDto } from './dto/update-cultivo.dto'
@@ -17,21 +17,27 @@ export class CultivosService {
     }
   }
 
-  async findAll() {
+  async findAll(userId: number) {
     const cultivos = await this.prisma.cultivo.findMany({
+      where: { userId },
       include: { user: true, reportes: true },
+      orderBy: { createdAt: 'desc' }
     })
+
     return cultivos.map(c => this.formatImage(c))
   }
 
-  async findOne(id: number) {
-    const cultivo = await this.prisma.cultivo.findUnique({
-      where: { id },
+  async findOne(id: number, userId: number) {
+    const cultivo = await this.prisma.cultivo.findFirst({
+      where: {
+        id,
+        userId
+      },
       include: { user: true, reportes: true },
     })
 
     if (!cultivo) {
-      throw new NotFoundException(`Cultivo con id ${id} no encontrado`)
+      throw new NotFoundException(`Cultivo no encontrado`)
     }
 
     return this.formatImage(cultivo)
@@ -50,10 +56,8 @@ export class CultivosService {
         ubicacion: data.ubicacion,
         frecuenciaRiego: data.frecuenciaRiego,
         estado: data.estado ?? 'activo',
-        imagen: data.imagen, 
-        user: {
-          connect: { id: user.id },
-        },
+        imagen: data.imagen,
+        userId: user.id
       },
       include: { user: true, reportes: true },
     })
@@ -63,9 +67,18 @@ export class CultivosService {
 
   async update(
     id: number,
-    data: UpdateCultivoDto & { imagen?: string; userId?: number },
+    userId: number,
+    data: UpdateCultivoDto & { imagen?: string }
   ) {
-    await this.findOne(id)
+    const cultivo = await this.prisma.cultivo.findUnique({
+      where: { id }
+    })
+
+    if (!cultivo) throw new NotFoundException('Cultivo no encontrado')
+
+    if (cultivo.userId !== userId) {
+      throw new ForbiddenException('No puedes editar este cultivo')
+    }
 
     const updateData: any = {}
 
@@ -75,19 +88,27 @@ export class CultivosService {
     if (data.ubicacion !== undefined) updateData.ubicacion = data.ubicacion
     if (data.frecuenciaRiego !== undefined) updateData.frecuenciaRiego = data.frecuenciaRiego
     if (data.estado !== undefined) updateData.estado = data.estado
-    if (data.imagen !== undefined) updateData.imagen = data.imagen 
+    if (data.imagen !== undefined) updateData.imagen = data.imagen
 
-    const cultivo = await this.prisma.cultivo.update({
+    const updated = await this.prisma.cultivo.update({
       where: { id },
       data: updateData,
       include: { user: true, reportes: true },
     })
 
-    return this.formatImage(cultivo)
+    return this.formatImage(updated)
   }
 
-  async remove(id: number) {
-    const cultivo = await this.findOne(id)
+  async remove(id: number, userId: number) {
+    const cultivo = await this.prisma.cultivo.findUnique({
+      where: { id }
+    })
+
+    if (!cultivo) throw new NotFoundException('Cultivo no encontrado')
+
+    if (cultivo.userId !== userId) {
+      throw new ForbiddenException('No puedes eliminar este cultivo')
+    }
 
     if (cultivo.imagen) {
       const relativePath = cultivo.imagen.replace(

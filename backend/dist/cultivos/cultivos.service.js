@@ -59,19 +59,24 @@ let CultivosService = class CultivosService {
             imagen: cultivo.imagen ? `${baseUrl}${cultivo.imagen}` : null,
         };
     }
-    async findAll() {
+    async findAll(userId) {
         const cultivos = await this.prisma.cultivo.findMany({
+            where: { userId },
             include: { user: true, reportes: true },
+            orderBy: { createdAt: 'desc' }
         });
         return cultivos.map(c => this.formatImage(c));
     }
-    async findOne(id) {
-        const cultivo = await this.prisma.cultivo.findUnique({
-            where: { id },
+    async findOne(id, userId) {
+        const cultivo = await this.prisma.cultivo.findFirst({
+            where: {
+                id,
+                userId
+            },
             include: { user: true, reportes: true },
         });
         if (!cultivo) {
-            throw new common_1.NotFoundException(`Cultivo con id ${id} no encontrado`);
+            throw new common_1.NotFoundException(`Cultivo no encontrado`);
         }
         return this.formatImage(cultivo);
     }
@@ -88,16 +93,21 @@ let CultivosService = class CultivosService {
                 frecuenciaRiego: data.frecuenciaRiego,
                 estado: data.estado ?? 'activo',
                 imagen: data.imagen,
-                user: {
-                    connect: { id: user.id },
-                },
+                userId: user.id
             },
             include: { user: true, reportes: true },
         });
         return this.formatImage(cultivo);
     }
-    async update(id, data) {
-        await this.findOne(id);
+    async update(id, userId, data) {
+        const cultivo = await this.prisma.cultivo.findUnique({
+            where: { id }
+        });
+        if (!cultivo)
+            throw new common_1.NotFoundException('Cultivo no encontrado');
+        if (cultivo.userId !== userId) {
+            throw new common_1.ForbiddenException('No puedes editar este cultivo');
+        }
         const updateData = {};
         if (data.nombre !== undefined)
             updateData.nombre = data.nombre;
@@ -113,15 +123,22 @@ let CultivosService = class CultivosService {
             updateData.estado = data.estado;
         if (data.imagen !== undefined)
             updateData.imagen = data.imagen;
-        const cultivo = await this.prisma.cultivo.update({
+        const updated = await this.prisma.cultivo.update({
             where: { id },
             data: updateData,
             include: { user: true, reportes: true },
         });
-        return this.formatImage(cultivo);
+        return this.formatImage(updated);
     }
-    async remove(id) {
-        const cultivo = await this.findOne(id);
+    async remove(id, userId) {
+        const cultivo = await this.prisma.cultivo.findUnique({
+            where: { id }
+        });
+        if (!cultivo)
+            throw new common_1.NotFoundException('Cultivo no encontrado');
+        if (cultivo.userId !== userId) {
+            throw new common_1.ForbiddenException('No puedes eliminar este cultivo');
+        }
         if (cultivo.imagen) {
             const relativePath = cultivo.imagen.replace(process.env.BASE_URL || 'http://localhost:3000', '');
             const imagePath = path.join(process.cwd(), relativePath);

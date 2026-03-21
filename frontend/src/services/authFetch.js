@@ -1,9 +1,14 @@
 export const authFetch = (url, options = {}) => {
   const token = localStorage.getItem("token");
+
   const headers = {
     ...(options.headers || {}),
-    Authorization: `Bearer ${token}`,
   };
+
+  // 🔥 SOLO si hay token válido
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   if (!(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";

@@ -18,8 +18,6 @@ import { CultivosService } from './cultivos.service'
 import { CreateCultivoDto } from './dto/create-cultivo.dto'
 import { UpdateCultivoDto } from './dto/update-cultivo.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import { RolesGuard } from '../auth/roles.guard'
-import { Role } from '../auth/role.decorator'
 
 const storage = diskStorage({
   destination: './uploads',
@@ -30,21 +28,21 @@ const storage = diskStorage({
 })
 
 @Controller('cultivos')
+@UseGuards(JwtAuthGuard)
 export class CultivosController {
   constructor(private readonly cultivosService: CultivosService) {}
 
   @Get()
-  findAll() {
-    return this.cultivosService.findAll()
+  findAll(@Request() req) {
+    return this.cultivosService.findAll(req.user.id)
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cultivosService.findOne(Number(id))
+  findOne(@Param('id') id: string, @Request() req) {
+    return this.cultivosService.findOne(Number(id), req.user.id)
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('imagen', { storage }))
   create(
     @Request() req,
@@ -54,29 +52,30 @@ export class CultivosController {
     if (file) {
       body.imagen = `/uploads/${file.filename}`
     }
+
     return this.cultivosService.create(req.user, body)
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('imagen', { storage }))
   update(
     @Request() req,
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
-    @Body() updateCultivoDto: UpdateCultivoDto,
+    @Body() dto: UpdateCultivoDto,
   ) {
-    return this.cultivosService.update(Number(id), {
-      ...updateCultivoDto,
-      imagen: file ? `/uploads/${file.filename}` : updateCultivoDto.imagen,
-      userId: req.user.sub,
-    })
+    return this.cultivosService.update(
+      Number(id),
+      req.user.id,
+      {
+        ...dto,
+        imagen: file ? `/uploads/${file.filename}` : dto.imagen,
+      }
+    )
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Role('admin')
-  remove(@Param('id') id: string) {
-    return this.cultivosService.remove(Number(id))
+  remove(@Param('id') id: string, @Request() req) {
+    return this.cultivosService.remove(Number(id), req.user.id)
   }
 }
