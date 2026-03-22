@@ -1,7 +1,8 @@
 .app-layout {
   display: flex;
   height: 100vh;
-  overflow: hidden;
+  overflow: visible; /* ← Cambiado de hidden a visible */
+  position: relative;
 }
 
 .main-layout {

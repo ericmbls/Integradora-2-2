@@ -65,9 +65,10 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
 
   return (
     <>
+      {/* Overlay con blur mejorado para móvil */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/45 z-40 lg:hidden backdrop-blur-[2px] animate-in fade-in duration-250"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden animate-fadeIn"
           onClick={onClose}
         />
       )}
@@ -127,11 +128,26 @@ export default function Sidebar({ currentPage, onNavigate, role = 'admin', isOpe
               className="ml-auto p-2 hover:bg-black/5 rounded-lg transition-colors group"
               title="Cerrar sesión"
             >
-              <LogOut size={16} className="text-gray-400" />
+              <LogOut size={16} className="text-gray-400 group-hover:text-red-500 transition-colors" />
             </button>
           </div>
         </div>
       </aside>
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.25s ease-out forwards;
+        }
+      `}</style>
     </>
   );
 }

@@ -56,6 +56,21 @@ export default function CultivosPage({ onOpenCultivo }) {
     loadCultivos();
   }, []);
 
+  useEffect(() => {
+    if (selectedCultivo || isAddOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [selectedCultivo, isAddOpen]);
+
   const surcos = useMemo(() => {
     const grouped = {};
     cultivos.forEach(({ ubicacion = "Sin ubicación", ...cultivo }) => {
@@ -80,8 +95,7 @@ export default function CultivosPage({ onOpenCultivo }) {
       filtered = filtered.map(surco => ({
         ...surco,
         cultivos: surco.cultivos.filter(cultivo => 
-          cultivo.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cultivo.tipo?.toLowerCase().includes(searchTerm.toLowerCase())
+          cultivo.nombre?.toLowerCase().includes(searchTerm.toLowerCase())
         )
       })).filter(surco => surco.cultivos.length > 0);
     }
@@ -139,7 +153,6 @@ export default function CultivosPage({ onOpenCultivo }) {
 
   const totalActivos = cultivos.filter(c => c.estado?.toLowerCase() === "activo" || c.estado?.toLowerCase() === "saludable").length;
   const totalAlertas = cultivos.filter(c => c.estado?.toLowerCase() === "alerta").length;
-  const totalCosechados = cultivos.filter(c => c.estado?.toLowerCase() === "cosechado").length;
 
   if (loading) {
     return (
@@ -270,7 +283,7 @@ export default function CultivosPage({ onOpenCultivo }) {
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar por nombre o tipo de cultivo..."
+            placeholder="Buscar por nombre de cultivo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/20 focus:border-[#8B6F47] transition-all bg-white"
@@ -469,12 +482,8 @@ export default function CultivosPage({ onOpenCultivo }) {
 
       <style>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         
         @keyframes slideUp {

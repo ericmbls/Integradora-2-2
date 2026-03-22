@@ -25,6 +25,21 @@ export default function CultivoDetallePage({ cultivo, onBack }) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  useEffect(() => {
+    if (isReporteOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [isReporteOpen]);
+
   if (!cultivo) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 animate-fadeIn">
