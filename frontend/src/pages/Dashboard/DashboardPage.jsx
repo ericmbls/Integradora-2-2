@@ -61,7 +61,9 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchWithAuth("http://localhost:3000/api/cultivos");
+        
+        const API_URL = import.meta.env.VITE_API_URL;
+        const data = await fetchWithAuth(`${API_URL}/api/cultivos`);
 
         setKpis([
           {
