@@ -26,7 +26,6 @@ export default function LoginPage({ setIsLoggedIn }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrorMessage("");
     
-    // Limpiar error del campo específico cuando el usuario empieza a escribir
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -75,7 +74,6 @@ export default function LoginPage({ setIsLoggedIn }) {
       password: ""
     };
 
-    // Validar nombre solo si es registro
     if (!isLoginActive) {
       const nombreError = validateField("nombre", formData.nombre);
       if (nombreError) {
@@ -84,14 +82,12 @@ export default function LoginPage({ setIsLoggedIn }) {
       }
     }
 
-    // Validar email
     const emailError = validateField("email", formData.email);
     if (emailError) {
       newFieldErrors.email = emailError;
       isValid = false;
     }
 
-    // Validar password
     const passwordError = validateField("password", formData.password);
     if (passwordError) {
       newFieldErrors.password = passwordError;
@@ -195,11 +191,16 @@ export default function LoginPage({ setIsLoggedIn }) {
           isLoginActive ? "" : "flex-row-reverse"
         }`}
       >
+        {/* Lado izquierdo con gradiente y bordes redondeados asimétricos */}
         <div className={`w-[45%] bg-gradient-to-br from-[#c49a6c] via-[#b78c63] to-[#a57c5a] text-white flex items-center justify-center p-10 transition-all duration-500 ${
           isLoginActive ? "rounded-r-[120px]" : "rounded-l-[120px]"
         }`}>
           <div className="text-center max-w-[260px]">
-            <img src={logo} alt="logo" className="w-[60px] mx-auto mb-5 drop-shadow-md hover:scale-105 hover:rotate-6 transition-transform duration-300" />
+            <img 
+              src={logo} 
+              alt="logo" 
+              className="w-[60px] mx-auto mb-5 drop-shadow-md hover:scale-105 hover:rotate-6 transition-transform duration-300 cursor-pointer" 
+            />
             <h2 className="text-3xl font-bold mb-4">
               {isLoginActive ? "¡Hola!" : "¡Bienvenido!"}
             </h2>
@@ -221,8 +222,10 @@ export default function LoginPage({ setIsLoggedIn }) {
           </div>
         </div>
 
+        {/* Lado derecho con formularios */}
         <div className="flex-1 flex items-center justify-center p-12 overflow-hidden relative bg-white">
           <div className="w-full max-w-[320px] relative min-h-[380px]">
+            {/* Mensaje de error */}
             {errorMessage && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm absolute top-[-70px] left-0 w-full">
                 {errorMessage}
@@ -241,6 +244,7 @@ export default function LoginPage({ setIsLoggedIn }) {
             >
               <h2 className="text-3xl font-bold mb-1 text-[#a57c5a]">Iniciar Sesión</h2>
               <p className="text-sm text-[#b78c63] mb-6 opacity-80">Usa tu correo y contraseña</p>
+              
               <form onSubmit={handleSubmit} className="flex flex-col">
                 <div className="flex flex-col mb-4">
                   <label className="text-xs mb-1 text-[#a57c5a] font-medium">Email</label>
@@ -255,7 +259,7 @@ export default function LoginPage({ setIsLoggedIn }) {
                     placeholder="ejemplo@correo.com"
                     autoComplete="email"
                     className={`p-3 rounded-lg border text-sm bg-[#fffbf5] focus:outline-none focus:ring-2 focus:ring-[#c49a6c] focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.email ? "border-red-500 bg-red-50" : "border-[#e2d5c8]"
+                      fieldErrors.email ? "border-red-500 bg-red-50" : "border-[#e2d5c8] hover:border-[#c49a6c]"
                     }`}
                   />
                   {fieldErrors.email && (
@@ -276,7 +280,7 @@ export default function LoginPage({ setIsLoggedIn }) {
                     placeholder="Mínimo 6 caracteres"
                     autoComplete="current-password"
                     className={`p-3 rounded-lg border text-sm bg-[#fffbf5] focus:outline-none focus:ring-2 focus:ring-[#c49a6c] focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.password ? "border-red-500 bg-red-50" : "border-[#e2d5c8]"
+                      fieldErrors.password ? "border-red-500 bg-red-50" : "border-[#e2d5c8] hover:border-[#c49a6c]"
                     }`}
                   />
                   {fieldErrors.password && (
@@ -287,7 +291,7 @@ export default function LoginPage({ setIsLoggedIn }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="p-3 bg-gradient-to-r from-[#c49a6c] to-[#b78c63] text-white rounded-lg font-semibold mt-2 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
+                  className="p-3 bg-gradient-to-r from-[#c49a6c] to-[#b78c63] text-white rounded-lg font-semibold mt-2 hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -311,6 +315,7 @@ export default function LoginPage({ setIsLoggedIn }) {
             >
               <h2 className="text-3xl font-bold mb-1 text-[#a57c5a]">Crear Cuenta</h2>
               <p className="text-sm text-[#b78c63] mb-6 opacity-80">Regístrate con tu correo</p>
+              
               <form onSubmit={handleSubmit} className="flex flex-col">
                 <div className="flex flex-col mb-4">
                   <label className="text-xs mb-1 text-[#a57c5a] font-medium">Nombre</label>
@@ -325,7 +330,7 @@ export default function LoginPage({ setIsLoggedIn }) {
                     placeholder="Tu nombre completo"
                     autoComplete="name"
                     className={`p-3 rounded-lg border text-sm bg-[#fffbf5] focus:outline-none focus:ring-2 focus:ring-[#c49a6c] focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.nombre ? "border-red-500 bg-red-50" : "border-[#e2d5c8]"
+                      fieldErrors.nombre ? "border-red-500 bg-red-50" : "border-[#e2d5c8] hover:border-[#c49a6c]"
                     }`}
                   />
                   {fieldErrors.nombre && (
@@ -346,7 +351,7 @@ export default function LoginPage({ setIsLoggedIn }) {
                     placeholder="ejemplo@correo.com"
                     autoComplete="email"
                     className={`p-3 rounded-lg border text-sm bg-[#fffbf5] focus:outline-none focus:ring-2 focus:ring-[#c49a6c] focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.email ? "border-red-500 bg-red-50" : "border-[#e2d5c8]"
+                      fieldErrors.email ? "border-red-500 bg-red-50" : "border-[#e2d5c8] hover:border-[#c49a6c]"
                     }`}
                   />
                   {fieldErrors.email && (
@@ -367,7 +372,7 @@ export default function LoginPage({ setIsLoggedIn }) {
                     placeholder="Mínimo 6 caracteres, una letra y un número"
                     autoComplete="new-password"
                     className={`p-3 rounded-lg border text-sm bg-[#fffbf5] focus:outline-none focus:ring-2 focus:ring-[#c49a6c] focus:border-transparent transition-all duration-300 ${
-                      fieldErrors.password ? "border-red-500 bg-red-50" : "border-[#e2d5c8]"
+                      fieldErrors.password ? "border-red-500 bg-red-50" : "border-[#e2d5c8] hover:border-[#c49a6c]"
                     }`}
                   />
                   {fieldErrors.password && (
@@ -378,7 +383,7 @@ export default function LoginPage({ setIsLoggedIn }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="p-3 bg-gradient-to-r from-[#c49a6c] to-[#b78c63] text-white rounded-lg font-semibold mt-2 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
+                  className="p-3 bg-gradient-to-r from-[#c49a6c] to-[#b78c63] text-white rounded-lg font-semibold mt-2 hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">

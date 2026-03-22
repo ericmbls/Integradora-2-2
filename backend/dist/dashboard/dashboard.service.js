@@ -8,15 +8,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
-const axios_1 = __importDefault(require("axios"));
 let DashboardService = class DashboardService {
     prisma;
     constructor(prisma) {
@@ -33,31 +29,6 @@ let DashboardService = class DashboardService {
             { title: 'Inactivos', value: inactivos, sub: 'Fuera de ciclo', icon: 'alertCircle', status: 'danger' },
             { title: 'Cosechados', value: cosechados, sub: 'Finalizados', icon: 'download', status: 'neutral' },
         ];
-        const apiKey = process.env.OPENWEATHER_API_KEY;
-        const location = 'Huamantla,mx';
-        const url = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&appid=${apiKey}&units=metric&lang=es`;
-        const forecastRes = await axios_1.default.get(url);
-        const forecastData = forecastRes.data.list;
-        const pronostico = [];
-        const diasVistos = new Set();
-        for (const item of forecastData) {
-            const fecha = new Date(item.dt * 1000);
-            const dayName = fecha.toLocaleDateString('es-MX', { weekday: 'short' });
-            if (!diasVistos.has(dayName)) {
-                diasVistos.add(dayName);
-                let icon = 'sun';
-                if (item.weather[0].main === 'Clouds')
-                    icon = 'cloudSun';
-                if (item.weather[0].main === 'Rain')
-                    icon = 'cloudRain';
-                pronostico.push({
-                    id: pronostico.length + 1,
-                    day: dayName,
-                    icon,
-                    temp: `${Math.round(item.main.temp)}°C`,
-                });
-            }
-        }
         const zonasCultivo = await this.prisma.cultivo.findMany({
             where: { userId },
             select: {
@@ -73,7 +44,7 @@ let DashboardService = class DashboardService {
             id: i + 1,
             status: [6, 12].includes(i + 1) ? 'alert' : 'ok',
         }));
-        return { kpis, pronostico, zonasCultivo, heatmapZones };
+        return { kpis, zonasCultivo, heatmapZones };
     }
 };
 exports.DashboardService = DashboardService;

@@ -10,7 +10,6 @@ export declare class DashboardService {
             icon: string;
             status: string;
         }[];
-        pronostico: any[];
         zonasCultivo: {
             id: number;
             nombre: string;

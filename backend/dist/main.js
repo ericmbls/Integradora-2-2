@@ -9,16 +9,19 @@ async function bootstrap() {
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         transform: true,
+        stopAtFirstError: true,
     }));
     app.setGlobalPrefix('api');
     app.enableCors({
-        origin: 'http://localhost:5173',
+        origin: process.env.FRONTEND_URL || '*',
         credentials: true,
     });
     app.useStaticAssets((0, path_1.join)(__dirname, '..', 'uploads'), {
         prefix: '/uploads/',
     });
-    await app.listen(process.env.PORT || 3000);
+    const port = process.env.PORT || 3000;
+    await app.listen(port);
+    console.log(`🚀 Server running on port ${port}`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
