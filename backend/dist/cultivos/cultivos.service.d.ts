@@ -14,8 +14,8 @@ export declare class CultivosService {
         imagen?: string;
     }): Promise<any>;
     remove(id: number, userId: number): Promise<{
-        id: number;
         createdAt: Date;
+        id: number;
         nombre: string;
         descripcion: string | null;
         fechaSiembra: Date;

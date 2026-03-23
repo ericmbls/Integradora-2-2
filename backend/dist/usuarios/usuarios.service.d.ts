@@ -8,59 +8,59 @@ export declare class UsuariosService {
     findAll(): Promise<{
         name: string;
         email: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }[]>;
     findOne(id: number): Promise<{
         name: string;
         email: string;
         password: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
         darkMode: boolean;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }>;
     create(dto: CreateUserDto): Promise<{
         name: string;
         email: string;
         password: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
         darkMode: boolean;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }>;
     update(id: number, dto: UpdateUserDto): Promise<{
         name: string;
         email: string;
         password: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
         darkMode: boolean;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }>;
     remove(id: number): Promise<{
         name: string;
         email: string;
         password: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
         darkMode: boolean;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }>;
     updatePreferences(userId: number, dto: UpdatePreferencesDto): Promise<{
         darkMode: boolean;

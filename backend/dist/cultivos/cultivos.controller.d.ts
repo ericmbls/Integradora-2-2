@@ -9,8 +9,8 @@ export declare class CultivosController {
     create(req: any, body: CreateCultivoDto, file?: Express.Multer.File): Promise<any>;
     update(req: any, id: string, file: Express.Multer.File, dto: UpdateCultivoDto): Promise<any>;
     remove(id: string, req: any): Promise<{
-        id: number;
         createdAt: Date;
+        id: number;
         nombre: string;
         descripcion: string | null;
         fechaSiembra: Date;

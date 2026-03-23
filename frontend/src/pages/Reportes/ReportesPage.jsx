@@ -18,7 +18,9 @@ import {
   TrendingUp,
   Clock,
   Grid3x3,
-  List
+  List,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 import { authFetch } from "../../services/authFetch";
 
@@ -30,15 +32,30 @@ export default function ReportesPage() {
   const [showStats, setShowStats] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("grid");
+  const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
+  const [isStatsAnimatingOut, setIsStatsAnimatingOut] = useState(false);
   const itemsPerPage = 6;
   const API = "/api/reportes";
 
   useEffect(() => {
-    document.body.style.overflow = showStats ? "hidden" : "";
+    if (showStats) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
     return () => {
       document.body.style.overflow = "";
     };
   }, [showStats]);
+
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ show: false, message: "", type: "success" });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show]);
 
   useEffect(() => {
     const fetchReportes = async () => {
@@ -51,6 +68,11 @@ export default function ReportesPage() {
       } catch (err) {
         console.error("Error cargando reportes", err);
         setReportes([]);
+        setNotification({
+          show: true,
+          message: "❌ Error al cargar los reportes",
+          type: "error"
+        });
       } finally {
         setLoading(false);
       }
@@ -58,7 +80,7 @@ export default function ReportesPage() {
     fetchReportes();
   }, []);
 
-  const descargarReporte = async (id) => {
+  const descargarReporte = async (id, titulo) => {
     try {
       const res = await authFetch(`${API}/${id}/descargar`);
       if (!res.ok) throw new Error("Error al descargar");
@@ -66,13 +88,24 @@ export default function ReportesPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `reporte-${id}.pdf`);
+      link.setAttribute("download", `reporte-${titulo || id}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      
+      setNotification({
+        show: true,
+        message: `✅ Reporte "${titulo}" descargado exitosamente`,
+        type: "success"
+      });
     } catch (error) {
       console.error("Error descargando reporte", error);
+      setNotification({
+        show: true,
+        message: "❌ Error al descargar el reporte",
+        type: "error"
+      });
     }
   };
 
@@ -87,6 +120,14 @@ export default function ReportesPage() {
   const clearFilters = () => {
     setSelectedFilters([]);
     setCurrentPage(1);
+  };
+
+  const handleCloseStats = () => {
+    setIsStatsAnimatingOut(true);
+    setTimeout(() => {
+      setIsStatsAnimatingOut(false);
+      setShowStats(false);
+    }, 200);
   };
 
   const getTypeStats = () => {
@@ -158,28 +199,59 @@ export default function ReportesPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="relative">
-          <div className="w-20 h-20 border-4 border-gray-200 border-t-[#8B6F47] rounded-full animate-spin"></div>
-          <FileText size={24} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#8B6F47] animate-pulse" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-gray-200 border-t-[#8B6F47] rounded-full animate-spin"></div>
+          <FileText size={20} className="sm:w-6 sm:h-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#8B6F47] animate-pulse" />
         </div>
-        <p className="mt-4 text-gray-500 animate-pulse">Cargando reportes...</p>
+        <p className="mt-4 text-gray-500 animate-pulse text-sm sm:text-base">Cargando reportes...</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="p-6 max-w-7xl mx-auto space-y-8">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 sm:space-y-8 relative">
+        {notification.show && (
+          <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[10000] animate-in slide-in-from-top-2 fade-in duration-300 max-w-[calc(100%-2rem)] sm:max-w-md">
+            <div className={`rounded-lg shadow-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3 ${
+              notification.type === "success" 
+                ? "bg-green-50 border-l-4 border-green-500" 
+                : "bg-red-50 border-l-4 border-red-500"
+            }`}>
+              <div className="flex-shrink-0">
+                {notification.type === "success" ? (
+                  <CheckCircle size={16} className="sm:w-5 sm:h-5 text-green-500" />
+                ) : (
+                  <AlertCircle size={16} className="sm:w-5 sm:h-5 text-red-500" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p className={`text-xs sm:text-sm font-medium ${
+                  notification.type === "success" ? "text-green-800" : "text-red-800"
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setNotification({ show: false, message: "", type: "success" })}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={14} className="sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeIn">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#8B6F47] to-[#6b5436] rounded-xl flex items-center justify-center shadow-lg">
-              <BarChart3 size={22} className="text-white" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#8B6F47] to-[#6b5436] rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+              <BarChart3 size={18} className="sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                 Reportes del Sistema
               </h1>
-              <p className="text-gray-400 mt-1 flex items-center gap-1">
-                <FileText size={14} />
+              <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                <FileText size={12} className="sm:w-3.5 sm:h-3.5" />
                 Consulta y descarga reportes generados
               </p>
             </div>
@@ -187,50 +259,50 @@ export default function ReportesPage() {
           
           <button
             onClick={() => setShowStats(true)}
-            className="bg-gradient-to-r from-[#8B6F47] to-[#6b5436] hover:from-[#7a5f3c] hover:to-[#5a4530] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2 transform hover:scale-105"
+            className="bg-gradient-to-r from-[#8B6F47] to-[#6b5436] hover:from-[#7a5f3c] hover:to-[#5a4530] text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-1.5 sm:gap-2 hover:scale-105"
           >
-            <PieChart size={18} />
-            Estadísticas
+            <PieChart size={14} className="sm:w-4 sm:h-4" />
+            <span>Estadísticas</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 animate-slideUp">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-5 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-400 mb-1">Total reportes</p>
-                <p className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">{reportes.length}</p>
+                <p className="text-[10px] sm:text-sm text-gray-400 mb-0.5 sm:mb-1">Total reportes</p>
+                <p className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent group-hover:scale-105 transition-transform">{reportes.length}</p>
               </div>
-              <div className="p-3 bg-[#8B6F47]/10 rounded-xl">
-                <FileText size={20} className="text-[#8B6F47]" />
+              <div className="p-1.5 sm:p-3 bg-[#8B6F47]/10 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <FileText size={14} className="sm:w-5 sm:h-5 text-[#8B6F47]" />
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-              <TrendingUp size={10} />
-              Registrados en el sistema
+            <p className="text-[9px] sm:text-xs text-gray-400 mt-1 sm:mt-2 flex items-center gap-1">
+              <TrendingUp size={8} className="sm:w-2.5 sm:h-2.5" />
+              Registrados
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 animate-slideUp" style={{ animationDelay: "100ms" }}>
+          <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-5 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-400 mb-1">Reportes filtrados</p>
-                <p className="text-3xl font-bold text-[#8B6F47]">{filteredReportes.length}</p>
+                <p className="text-[10px] sm:text-sm text-gray-400 mb-0.5 sm:mb-1">Filtrados</p>
+                <p className="text-xl sm:text-3xl font-bold text-[#8B6F47] group-hover:scale-105 transition-transform">{filteredReportes.length}</p>
               </div>
-              <div className="p-3 bg-[#8B6F47]/10 rounded-xl">
-                <Filter size={20} className="text-[#8B6F47]" />
+              <div className="p-1.5 sm:p-3 bg-[#8B6F47]/10 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <Filter size={14} className="sm:w-5 sm:h-5 text-[#8B6F47]" />
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-              {selectedFilters.length} filtros activos
+            <p className="text-[9px] sm:text-xs text-gray-400 mt-1 sm:mt-2">
+              {selectedFilters.length} filtros
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 animate-slideUp" style={{ animationDelay: "200ms" }}>
+          <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-5 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-400 mb-1">Este mes</p>
-                <p className="text-3xl font-bold text-emerald-600">
+                <p className="text-[10px] sm:text-sm text-gray-400 mb-0.5 sm:mb-1">Este mes</p>
+                <p className="text-xl sm:text-3xl font-bold text-emerald-600 group-hover:scale-105 transition-transform">
                   {filteredReportes.filter((r) => {
                     const fecha = new Date(r.date);
                     const hoy = new Date();
@@ -238,74 +310,82 @@ export default function ReportesPage() {
                   }).length}
                 </p>
               </div>
-              <div className="p-3 bg-emerald-50 rounded-xl">
-                <Calendar size={20} className="text-emerald-600" />
+              <div className="p-1.5 sm:p-3 bg-emerald-50 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <Calendar size={14} className="sm:w-5 sm:h-5 text-emerald-600" />
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-              <Clock size={10} />
+            <p className="text-[9px] sm:text-xs text-gray-400 mt-1 sm:mt-2 flex items-center gap-1">
+              <Clock size={8} className="sm:w-2.5 sm:h-2.5" />
               Últimos 30 días
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 animate-slideUp" style={{ animationDelay: "300ms" }}>
+          <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-5 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray-400 mb-1">Tipos distintos</p>
-                <p className="text-3xl font-bold text-amber-600">{uniqueTypes.length}</p>
+                <p className="text-[10px] sm:text-sm text-gray-400 mb-0.5 sm:mb-1">Tipos</p>
+                <p className="text-xl sm:text-3xl font-bold text-amber-600 group-hover:scale-105 transition-transform">{uniqueTypes.length}</p>
               </div>
-              <div className="p-3 bg-amber-50 rounded-xl">
-                <Tag size={20} className="text-amber-600" />
+              <div className="p-1.5 sm:p-3 bg-amber-50 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform duration-300">
+                <Tag size={14} className="sm:w-5 sm:h-5 text-amber-600" />
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-              Categorías disponibles
+            <p className="text-[9px] sm:text-xs text-gray-400 mt-1 sm:mt-2">
+              Categorías
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 animate-slideUp">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
-              <Filter size={16} className="text-[#8B6F47]" />
-              <h3 className="text-sm font-semibold text-gray-700">Filtros</h3>
+              <Filter size={14} className="sm:w-4 sm:h-4 text-[#8B6F47]" />
+              <h3 className="text-xs sm:text-sm font-semibold text-gray-700">Filtros</h3>
             </div>
             
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-1.5 rounded-lg transition-all ${viewMode === "grid" ? "bg-white shadow-sm text-[#8B6F47]" : "text-gray-400"}`}
+                  className={`p-1 rounded-lg transition-all duration-300 ${viewMode === "grid" ? "bg-white shadow-sm text-[#8B6F47]" : "text-gray-400"}`}
                 >
-                  <Grid3x3 size={16} />
+                  <Grid3x3 size={14} className="sm:w-4 sm:h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-1.5 rounded-lg transition-all ${viewMode === "list" ? "bg-white shadow-sm text-[#8B6F47]" : "text-gray-400"}`}
+                  className={`p-1 rounded-lg transition-all duration-300 ${viewMode === "list" ? "bg-white shadow-sm text-[#8B6F47]" : "text-gray-400"}`}
                 >
-                  <List size={16} />
+                  <List size={14} className="sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
           </div>
 
           <div className="relative mb-4">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="sm:w-4 sm:h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por título, autor o cultivo..."
+              placeholder="Buscar reporte..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/20 focus:border-[#8B6F47] transition-all bg-white"
+              className="w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 sm:py-3 text-sm border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/20 focus:border-[#8B6F47] transition-all bg-white"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-all"
+              >
+                <X size={12} className="sm:w-4 sm:h-4" />
+              </button>
+            )}
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <button
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 ${
                 selectedFilters.length === 0 
                   ? "bg-gradient-to-r from-[#8B6F47] to-[#6b5436] text-white shadow-md" 
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -318,60 +398,59 @@ export default function ReportesPage() {
             {uniqueTypes.map((type) => (
               <button
                 key={type}
-                className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${
+                className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-all duration-300 ${
                   selectedFilters.includes(type) 
                     ? "bg-gradient-to-r from-[#8B6F47] to-[#6b5436] text-white shadow-md" 
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
                 onClick={() => toggleFilter(type)}
               >
-                {type} ({reportes.filter((r) => r.type?.toLowerCase() === type).length})
+                {type}
               </button>
             ))}
           </div>
         </div>
 
         {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentItems.map((rep, idx) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {currentItems.map((rep) => (
               <div
                 key={rep.id}
-                className="group bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden hover:border-[#8B6F47]/30 transform hover:-translate-y-1 animate-slideUp"
-                style={{ animationDelay: `${idx * 50}ms` }}
+                className="group bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden hover:border-[#8B6F47]/30 transform hover:-translate-y-1 sm:hover:-translate-y-2"
               >
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`px-3 py-1 text-xs rounded-full border ${getTypeColor(rep.type)}`}>
+                <div className="p-4 sm:p-5">
+                  <div className="flex justify-between items-start mb-3 gap-2">
+                    <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-full border ${getTypeColor(rep.type)}`}>
                       {rep.type}
                     </span>
-                    <span className="text-xs text-gray-400 flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full">
-                      <Calendar size={10} />
+                    <span className="text-[10px] sm:text-xs text-gray-400 flex items-center gap-1 bg-gray-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
+                      <Calendar size={8} className="sm:w-2.5 sm:h-2.5" />
                       {rep.date}
                     </span>
                   </div>
 
-                  <h3 className="font-semibold text-gray-800 text-lg mb-2 line-clamp-2 group-hover:text-[#8B6F47] transition-colors">
+                  <h3 className="font-semibold text-gray-800 text-sm sm:text-lg mb-2 line-clamp-2 group-hover:text-[#8B6F47] transition-colors">
                     {rep.title}
                   </h3>
 
                   {rep.cultivo && (
-                    <div className="text-xs text-gray-500 mt-2 flex items-center gap-1 bg-gray-50 inline-flex px-2 py-1 rounded-full">
-                      <Tag size={10} />
+                    <div className="text-[10px] sm:text-xs text-gray-500 mt-2 flex items-center gap-1 bg-gray-50 inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+                      <Tag size={8} className="sm:w-2.5 sm:h-2.5" />
                       {rep.cultivo}
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <User size={12} />
-                      {rep.autor}
+                  <div className="flex justify-between items-center mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-100">
+                    <span className="text-[10px] sm:text-xs text-gray-400 flex items-center gap-1 truncate max-w-[120px] sm:max-w-full">
+                      <User size={8} className="sm:w-3 sm:h-3 flex-shrink-0" />
+                      <span className="truncate">{rep.autor}</span>
                     </span>
 
                     <button
-                      onClick={() => descargarReporte(rep.id)}
-                      className="p-2 text-gray-400 hover:text-[#8B6F47] hover:bg-[#8B6F47]/10 rounded-lg transition-all duration-300"
+                      onClick={() => descargarReporte(rep.id, rep.title)}
+                      className="p-1.5 sm:p-2 text-gray-400 hover:text-[#8B6F47] hover:bg-[#8B6F47]/10 rounded-lg transition-all duration-300"
                     >
-                      <Download size={16} />
+                      <Download size={12} className="sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 </div>
@@ -379,57 +458,59 @@ export default function ReportesPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="w-full">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">Tipo</th>
-                  <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">Título</th>
-                  <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">Cultivo</th>
-                  <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">Fecha</th>
-                  <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">Autor</th>
-                  <th className="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">Acciones</th>
+                  <th className="text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider px-3 sm:px-6 py-2 sm:py-4">Tipo</th>
+                  <th className="text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider px-3 sm:px-6 py-2 sm:py-4">Título</th>
+                  <th className="text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider px-3 sm:px-6 py-2 sm:py-4 hidden sm:table-cell">Cultivo</th>
+                  <th className="text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider px-3 sm:px-6 py-2 sm:py-4 hidden md:table-cell">Fecha</th>
+                  <th className="text-left text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider px-3 sm:px-6 py-2 sm:py-4 hidden lg:table-cell">Autor</th>
+                  <th className="text-right text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider px-3 sm:px-6 py-2 sm:py-4">Acciones</th>
                  </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {currentItems.map((rep, idx) => (
-                  <tr key={rep.id} className="hover:bg-gray-50/50 transition-colors group animate-slideUp" style={{ animationDelay: `${idx * 30}ms` }}>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-xs rounded-full border ${getTypeColor(rep.type)}`}>
+                {currentItems.map((rep) => (
+                  <tr key={rep.id} className="hover:bg-gray-50/50 transition-all duration-300 group">
+                    <td className="px-3 sm:px-6 py-2 sm:py-4">
+                      <span className={`px-1.5 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-xs rounded-full border inline-block ${getTypeColor(rep.type)}`}>
                         {rep.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-gray-800 group-hover:text-[#8B6F47] transition-colors">{rep.title}</p>
+                    <td className="px-3 sm:px-6 py-2 sm:py-4">
+                      <p className="text-xs sm:text-sm font-medium text-gray-800 group-hover:text-[#8B6F47] transition-colors line-clamp-1 max-w-[120px] sm:max-w-none">
+                        {rep.title}
+                      </p>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-2 sm:py-4 hidden sm:table-cell">
                       {rep.cultivo ? (
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Tag size={10} />
-                          {rep.cultivo}
+                        <span className="text-[9px] sm:text-xs text-gray-500 flex items-center gap-1">
+                          <Tag size={8} className="sm:w-2.5 sm:h-2.5" />
+                          <span className="truncate max-w-[80px] sm:max-w-none">{rep.cultivo}</span>
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-300">—</span>
+                        <span className="text-[9px] sm:text-xs text-gray-300">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <Calendar size={10} />
+                    <td className="px-3 sm:px-6 py-2 sm:py-4 hidden md:table-cell">
+                      <span className="text-[9px] sm:text-xs text-gray-500 flex items-center gap-1 whitespace-nowrap">
+                        <Calendar size={8} className="sm:w-2.5 sm:h-2.5" />
                         {rep.date}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <User size={10} />
+                    <td className="px-3 sm:px-6 py-2 sm:py-4 hidden lg:table-cell">
+                      <span className="text-[9px] sm:text-xs text-gray-500 flex items-center gap-1 truncate max-w-[100px]">
+                        <User size={8} className="sm:w-2.5 sm:h-2.5" />
                         {rep.autor}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-3 sm:px-6 py-2 sm:py-4 text-right">
                       <button
-                        onClick={() => descargarReporte(rep.id)}
-                        className="p-2 text-gray-400 hover:text-[#8B6F47] hover:bg-[#8B6F47]/10 rounded-lg transition-all duration-300"
+                        onClick={() => descargarReporte(rep.id, rep.title)}
+                        className="p-1.5 sm:p-2 text-gray-400 hover:text-[#8B6F47] hover:bg-[#8B6F47]/10 rounded-lg transition-all duration-300"
                       >
-                        <Download size={16} />
+                        <Download size={12} className="sm:w-4 sm:h-4" />
                       </button>
                     </td>
                   </tr>
@@ -440,47 +521,47 @@ export default function ReportesPage() {
         )}
 
         {currentItems.length === 0 && (
-          <div className="text-center py-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200 animate-fadeIn">
-            <div className="w-20 h-20 bg-[#8B6F47]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText size={32} className="text-[#8B6F47]" />
+          <div className="text-center py-12 sm:py-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#8B6F47]/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <FileText size={24} className="sm:w-8 sm:h-8 text-[#8B6F47]" />
             </div>
-            <p className="text-gray-500 text-lg mb-2 font-medium">No se encontraron reportes</p>
-            <p className="text-gray-400 text-sm">Intenta con otros filtros o términos de búsqueda</p>
+            <p className="text-gray-500 text-base sm:text-lg mb-1 sm:mb-2 font-medium">No se encontraron reportes</p>
+            <p className="text-gray-400 text-xs sm:text-sm">Intenta con otros filtros o términos de búsqueda</p>
           </div>
         )}
 
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-8">
+          <div className="flex justify-center items-center gap-1 sm:gap-2 mt-6 sm:mt-8">
             <button
               onClick={firstPage}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
+              className="p-1.5 sm:p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
             >
-              <ChevronsLeft size={16} />
+              <ChevronsLeft size={14} className="sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={prevPage}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
+              className="p-1.5 sm:p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={14} className="sm:w-4 sm:h-4" />
             </button>
-            <span className="px-4 py-2 text-sm text-gray-600">
-              Página {currentPage} de {totalPages}
+            <span className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600">
+              {currentPage} / {totalPages}
             </span>
             <button
               onClick={nextPage}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
+              className="p-1.5 sm:p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={14} className="sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={lastPage}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
+              className="p-1.5 sm:p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
             >
-              <ChevronsRight size={16} />
+              <ChevronsRight size={14} className="sm:w-4 sm:h-4" />
             </button>
           </div>
         )}
@@ -488,49 +569,56 @@ export default function ReportesPage() {
 
       {showStats && createPortal(
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
-          onClick={() => setShowStats(false)}
+          className={`fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-3 sm:p-4 transition-all duration-200 ${
+            isStatsAnimatingOut ? "opacity-0" : "opacity-100"
+          }`}
+          onClick={handleCloseStats}
         >
           <div
-            className="bg-white rounded-2xl max-w-md w-full shadow-xl relative animate-in fade-in duration-200 max-h-[90vh] overflow-y-auto"
+            className={`bg-white rounded-2xl w-[calc(100%-2rem)] sm:w-full max-w-md shadow-2xl relative overflow-hidden transition-all duration-300 mx-2 sm:mx-0 max-h-[90vh] overflow-y-auto ${
+              isStatsAnimatingOut 
+                ? "opacity-0 scale-95 translate-y-4" 
+                : "opacity-100 scale-100 translate-y-0"
+            }`}
             onClick={e => e.stopPropagation()}
           >
-            <button
-              className="sticky top-4 right-4 float-right text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full z-10"
-              onClick={() => setShowStats(false)}
-            >
-              <X size={20} />
-            </button>
-
-            <div className="clear-both"></div>
-
-            <div className="px-6 pt-2 pb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#8B6F47] to-[#6b5436] rounded-xl flex items-center justify-center shadow-md">
-                  <PieChart size={20} className="text-white" />
+            <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#8B6F47] to-[#6b5436] rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                  <PieChart size={16} className="sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800">Estadísticas de Reportes</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <h3 className="text-sm sm:text-lg font-semibold text-gray-800">
+                    Estadísticas
+                  </h3>
+                  <p className="text-[10px] sm:text-xs text-gray-400 hidden sm:block">
                     Resumen de reportes del sistema
                   </p>
                 </div>
               </div>
+              <button
+                className="text-gray-400 hover:text-gray-600 transition-all duration-300 p-1.5 hover:bg-gray-100 rounded-full"
+                onClick={handleCloseStats}
+              >
+                <X size={16} className="sm:w-5 sm:h-5" />
+              </button>
+            </div>
 
-              <div className="space-y-6">
+            <div className="px-4 sm:px-6 py-4 sm:py-6">
+              <div className="space-y-5 sm:space-y-6">
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-4">Por tipo de reporte</h4>
+                  <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-3 sm:mb-4">Por tipo</h4>
                   {Object.entries(getTypeStats()).map(([type, count]) => (
-                    <div key={type} className="flex justify-between items-center mb-3 group">
-                      <span className="text-sm text-gray-600 capitalize">{type}</span>
-                      <div className="flex items-center gap-3 flex-1 ml-4">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div key={type} className="flex justify-between items-center mb-2 sm:mb-3">
+                      <span className="text-[11px] sm:text-sm text-gray-600 capitalize">{type}</span>
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 ml-3 sm:ml-4">
+                        <div className="flex-1 bg-gray-200 rounded-full h-1.5 sm:h-2 overflow-hidden">
                           <div 
-                            className="bg-gradient-to-r from-[#8B6F47] to-[#6b5436] h-2 rounded-full transition-all duration-1000 group-hover:opacity-80"
+                            className="bg-gradient-to-r from-[#8B6F47] to-[#6b5436] h-full rounded-full"
                             style={{ width: `${(count / reportes.length) * 100}%` }}
                           />
                         </div>
-                        <span className="text-sm font-semibold text-[#8B6F47] min-w-[40px]">
+                        <span className="text-xs sm:text-sm font-semibold text-[#8B6F47] min-w-[35px] sm:min-w-[40px]">
                           {count}
                         </span>
                       </div>
@@ -539,38 +627,32 @@ export default function ReportesPage() {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-4">Por mes</h4>
-                  <div className="grid grid-cols-3 gap-2">
+                  <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-3 sm:mb-4">Por mes</h4>
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                     {Object.entries(getMonthStats()).map(([month, count]) => (
-                      <div key={month} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 text-center hover:shadow-md transition-all">
-                        <p className="text-xs text-gray-500">{month}</p>
-                        <p className="text-xl font-bold text-[#8B6F47]">{count}</p>
+                      <div key={month} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+                        <p className="text-[9px] sm:text-xs text-gray-500">{month}</p>
+                        <p className="text-sm sm:text-xl font-bold text-[#8B6F47]">{count}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100">
-                  <div className="flex justify-between items-center text-sm py-2">
-                    <span className="text-gray-500">Total de reportes:</span>
+                <div className="pt-3 sm:pt-4 border-t border-gray-100">
+                  <div className="flex justify-between items-center text-xs sm:text-sm py-1.5 sm:py-2">
+                    <span className="text-gray-500">Total:</span>
                     <span className="font-bold text-gray-800">{reportes.length}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm py-2">
-                    <span className="text-gray-500">Tipos distintos:</span>
+                  <div className="flex justify-between items-center text-xs sm:text-sm py-1.5 sm:py-2">
+                    <span className="text-gray-500">Tipos:</span>
                     <span className="font-bold text-gray-800">{Object.keys(getTypeStats()).length}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-2">
-                    <span className="text-gray-500">Promedio por tipo:</span>
-                    <span className="font-bold text-gray-800">
-                      {(reportes.length / Object.keys(getTypeStats()).length || 0).toFixed(1)}
-                    </span>
                   </div>
                 </div>
               </div>
 
               <button
-                onClick={() => setShowStats(false)}
-                className="mt-6 w-full py-3 bg-gradient-to-r from-[#8B6F47] to-[#6b5436] text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
+                onClick={handleCloseStats}
+                className="mt-5 sm:mt-6 w-full py-2.5 sm:py-3 bg-gradient-to-r from-[#8B6F47] to-[#6b5436] text-white rounded-lg sm:rounded-xl font-semibold hover:shadow-lg transition-all duration-300 text-sm"
               >
                 Cerrar
               </button>
@@ -597,6 +679,50 @@ export default function ReportesPage() {
           }
         }
         
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-1rem);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(1rem);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes slideInBottom {
+          from {
+            opacity: 0;
+            transform: translateY(1rem);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes zoomIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
         .animate-fadeIn {
           animation: fadeIn 0.5s ease-out forwards;
         }
@@ -606,9 +732,36 @@ export default function ReportesPage() {
           opacity: 0;
         }
         
+        .animate-in {
+          animation-fill-mode: forwards;
+        }
+        
+        .slide-in-from-left-4 {
+          animation: slideInLeft 0.3s ease-out forwards;
+        }
+        
+        .slide-in-from-right-4 {
+          animation: slideInRight 0.3s ease-out forwards;
+        }
+        
+        .slide-in-from-bottom-4 {
+          animation: slideInBottom 0.3s ease-out forwards;
+        }
+        
+        .zoom-in {
+          animation: zoomIn 0.3s ease-out forwards;
+        }
+        
         .line-clamp-2 {
           display: -webkit-box;
           -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        
+        .line-clamp-1 {
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
           -webkit-box-orient: vertical;
           overflow: hidden;
         }

@@ -20,58 +20,58 @@ export declare class UsuariosController {
     findAll(): Promise<{
         name: string;
         email: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }[]>;
     findOne(id: string): Promise<{
         name: string;
         email: string;
         password: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
         darkMode: boolean;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }>;
     create(dto: CreateUserDto): Promise<{
         name: string;
         email: string;
         password: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
         darkMode: boolean;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }>;
     update(id: string, dto: UpdateUserDto): Promise<{
         name: string;
         email: string;
         password: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
         darkMode: boolean;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }>;
     remove(id: string): Promise<{
         name: string;
         email: string;
         password: string;
-        id: number;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
         darkMode: boolean;
         language: string | null;
         farmName: string | null;
         location: string | null;
+        id: number;
     }>;
 }
